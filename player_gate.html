@@ -5,52 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Player Gate – Gold Black</title>
 <style>
-body { font-family: Arial,sans-serif; background:#000; color:#ffd700; text-align:center; padding:60px 30px; }
-.gate { max-width:420px; padding:30px; margin:auto; border-radius:20px; background:linear-gradient(145deg,#1a1a1a,#000); border:2px solid #ffd700; box-shadow:0 0 25px #ffcc00; animation:glow 2s infinite alternate; }
-@keyframes glow { from{box-shadow:0 0 15px #ccac00;} to{box-shadow:0 0 35px #ffe680;} }
-input { width:80%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ffd700; background:#0d0d0d; color:#ffd700; font-size:16px; }
-button { padding:12px 20px; border-radius:10px; border:none; background:#ffd700; color:#000; font-weight:bold; font-size:16px; cursor:pointer; transition:0.2s; }
-button:hover { background:#ffea66; }
-.error { color:#ff6666; margin-top:10px; }
+body { font-family: Arial, sans-serif; background: #000; color: #ffd700; text-align: center; padding: 60px 30px;}
+.gate { max-width: 420px; padding: 30px; margin: auto; border-radius: 20px; background: linear-gradient(145deg, #1a1a1a, #000); border: 2px solid #ffd700; box-shadow: 0 0 25px #ffcc00; }
+input { width: 80%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #ffd700; background: #0d0d0d; color: #ffd700; font-size: 16px; }
+button { padding: 12px 20px; border-radius: 10px; border: none; background: #ffd700; color: #000; font-weight: bold; font-size: 16px; cursor: pointer; }
+button:hover { background: #ffea66; }
+.error { color: #ff6666; margin-top: 10px; }
 </style>
 </head>
 <body>
 <div class="gate">
-  <h1 style="font-size:28px;font-weight:700;letter-spacing:1px;margin-bottom:10px;text-shadow:0 0 12px #ffd700;">
-    Enter Your Unique Access Code
-  </h1>
+  <h1>Enter Your Unique Access Code</h1>
   <p>Input your code to continue</p>
   <input type="text" id="codeInput" placeholder="Enter your code">
   <br>
-  <button onclick="validateCode()">Enter</button>
+  <button onclick="enterGame()">Enter</button>
   <p class="error" id="errorMsg"></p>
 </div>
 
 <script>
-// URL JSON GitHub Pages
-const codesUrl = 'https://gesg8899-prog.github.io/plinkoGE88/player_codes.json';
-let codes = [];	
+const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
+let codes = [];
+
 fetch(codesUrl)
   .then(res => res.json())
   .then(data => codes = data)
   .catch(() => console.log('Failed to load codes'));
 
-function validateCode() {
-  const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
-  const error = document.getElementById('errorMsg');
-  error.textContent = '';
+function enterGame(){
+    const inputCode = document.getElementById('codeInput').value.trim().toUpperCase();
+    const errorMsg = document.getElementById('errorMsg');
+    errorMsg.textContent = '';
 
-  if (!codeInput) { error.textContent = 'Code cannot be empty'; return; }
+    if(!inputCode){ errorMsg.textContent = 'Code cannot be empty'; return; }
 
-  const found = codes.find(c => c.code === codeInput);
-  if (!found) { error.textContent = 'Code not found'; return; }
-  if (found.used) { error.textContent = 'Code already used'; return; }
+    const found = codes.find(c => c.code === inputCode);
+    if(!found){ errorMsg.textContent = 'Code not found'; return; }
+    if(found.used){ errorMsg.textContent = 'Code already used'; return; }
 
-  // Tandai digunakan (di localStorage)
-  localStorage.setItem('playerCode', codeInput);
+    // Tandai used di localStorage untuk browser ini
+    localStorage.setItem('played_' + inputCode, 'true');
 
-  // Redirect ke Plinko
-  window.location.href = 'https://gesg8899-prog.github.io/plinkoGE88/?code=' + encodeURIComponent(codeInput);
+    // Redirect ke Plinko Game dengan kode di URL
+    window.location.href = 'https://gesg8899-prog.github.io/plinkoGE88/player_gate.html?code=' + inputCode;
 }
 </script>
 </body>
