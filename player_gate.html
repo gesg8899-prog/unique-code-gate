@@ -5,14 +5,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Player Gate – Gold Black</title>
 <style>
-body { font-family: Arial, sans-serif; background: #000000; color: #ffd700; text-align: center; padding: 60px 30px; }
-.gate { max-width: 420px; padding: 30px; margin: auto; border-radius: 20px; background: linear-gradient(145deg, #1a1a1a, #000000); border: 2px solid #ffd700; box-shadow: 0 0 25px #ffcc00; animation: glow 2s infinite alternate; }
-@keyframes glow { from { box-shadow: 0 0 15px #ccac00; } to { box-shadow: 0 0 35px #ffe680; } }
-input { width: 80%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #ffd700; background: #0d0d0d; color: #ffd700; font-size: 16px; }
-button { padding: 12px 20px; border-radius: 10px; border: none; background: #ffd700; color: #000; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
+body {
+  font-family: Arial, sans-serif;
+  background: #000000;
+  color: #ffd700;
+  text-align: center;
+  padding: 60px 30px;
+}
+.gate {
+  max-width: 420px;
+  padding: 30px;
+  margin: auto;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #1a1a1a, #000000);
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 25px #ffcc00;
+  animation: glow 2s infinite alternate;
+}
+@keyframes glow {
+  from { box-shadow: 0 0 15px #ccac00; }
+  to   { box-shadow: 0 0 35px #ffe680; }
+}
+input {
+  width: 80%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  border: 1px solid #ffd700;
+  background: #0d0d0d;
+  color: #ffd700;
+  font-size: 16px;
+}
+button {
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: none;
+  background: #ffd700;
+  color: #000;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
 button:hover { background: #ffea66; }
-.error { color: #ff6666; margin-top: 10px; }
-.small { font-size:13px;color:#ffd; margin-top:8px;}
+.error {
+  color: #ff6666;
+  margin-top: 10px;
+}
 </style>
 </head>
 <body>
@@ -22,49 +61,44 @@ button:hover { background: #ffea66; }
 
   <input type="text" id="codeInput" placeholder="Enter your code">
   <br>
-  <button id="enterBtn">Enter</button>
+  <button onclick="validateCode()">Enter</button>
   <p class="error" id="errorMsg"></p>
-  <p class="small">If your code is valid you'll be redirected to the game.</p>
 </div>
 
 <script>
-// CONFIG — ubah sesuai setup-mu
-const codesUrl = 'https://username.github.io/unique-code-gate/player_codes.json'; // <-- ganti ini ke GitHub Pages kamu (jika ada)
-const PLINKO_URL = 'https://yourdomain.com/plinko.html'; // <-- ganti ke URL Plinko (atau is.gd mapped link)
+// URL JSON GitHub Pages
+const codesUrl = 'https://gesg8899-prog.github.io/plinkoGE88/player_codes.json';
 
-// load codes (optional: used to validate against server copy)
-let codes = [];
+let codes = [];	
 fetch(codesUrl)
   .then(res => res.json())
   .then(data => codes = data)
-  .catch(() => {
-    // gagal load: masih tetap bisa melakukan validasi lokal (we'll allow but will require LocalStorage)
-    console.log('Failed to load codes.json from GitHub. Player Gate will still accept codes but cannot verify server-side.');
-  });
+  .catch(() => console.log('Failed to load codes'));
 
-document.getElementById('enterBtn').addEventListener('click', () => {
-  const input = document.getElementById('codeInput');
-  const err = document.getElementById('errorMsg');
-  err.textContent = '';
-  const raw = input.value.trim().toUpperCase();
-  if (!raw) { err.textContent = 'Code cannot be empty'; return; }
+function validateCode() {
+  const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
+  const error = document.getElementById('errorMsg');
+  error.textContent = '';
 
-  // If we loaded codes.json, check it
-  if (codes && codes.length) {
-      const found = codes.find(c => String(c.code).toUpperCase() === raw);
-      if (!found) { err.textContent = 'Code not found'; return; }
-      if (found.used) { err.textContent = 'Code already used'; return; }
+  if (!codeInput) {
+    error.textContent = 'Code cannot be empty';
+    return;
   }
 
-  // Mark used in localStorage so same browser can't reuse code
-  localStorage.setItem('played_' + raw, 'true');
+  const found = codes.find(c => c.code === codeInput);
+  if (!found) {
+    error.textContent = 'Code not found';
+    return;
+  }
+  if (found.used) {
+    error.textContent = 'Code already used';
+    return;
+  }
 
-  // Optional: if you want to update remote JSON automatically (requires token & server-side),
-  // you'd need to use GitHub API with a personal access token — not done here for security.
-  // Redirect to plinko with code as query param
-  const target = PLINKO_URL + '?code=' + encodeURIComponent(raw);
-  window.location.href = target;
-});
+  found.used = true; // tandai sebagai used
+  alert('✅ Code valid! Redirecting...');
+  window.location.href = 'https://is.gd/plinko88'; // redirect yang benar
+}
 </script>
 </body>
 </html>
