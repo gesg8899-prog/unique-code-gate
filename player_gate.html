@@ -29,7 +29,6 @@ button:hover { background:#ffea66; }
 <script>
 // URL JSON GitHub Pages
 const codesUrl = 'https://gesg8899-prog.github.io/plinkoGE88/player_codes.json';
-
 let codes = [];	
 fetch(codesUrl)
   .then(res => res.json())
@@ -47,10 +46,10 @@ function validateCode() {
   if (!found) { error.textContent = 'Code not found'; return; }
   if (found.used) { error.textContent = 'Code already used'; return; }
 
-  // tandai sebagai used (di localStorage dulu, karena JSON GitHub readonly)
-  localStorage.setItem('usedCode', codeInput);
+  // Tandai digunakan (di localStorage)
+  localStorage.setItem('playerCode', codeInput);
 
-  // redirect ke Plinko dengan kode di query param
+  // Redirect ke Plinko
   window.location.href = 'https://gesg8899-prog.github.io/plinkoGE88/?code=' + encodeURIComponent(codeInput);
 }
 </script>
