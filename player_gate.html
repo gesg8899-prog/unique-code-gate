@@ -66,14 +66,22 @@ button:hover { background: #ffea66; }
 </div>
 
 <script>
-// URL JSON GitHub Pages
-const codesUrl = 'https://gesg8899-prog.github.io/plinkoGE88/player_codes.json';
+const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
 
 let codes = [];	
 fetch(codesUrl)
-  .then(res => res.json())
-  .then(data => codes = data)
-  .catch(() => console.log('Failed to load codes'));
+  .then(res => {
+    if (!res.ok) throw new Error('Failed to fetch codes');
+    return res.json();
+  })
+  .then(data => {
+    codes = data;
+    console.log('Codes loaded:', codes);
+  })
+  .catch(err => {
+    console.error('Failed to load codes:', err);
+    document.getElementById('errorMsg').textContent = 'Error loading codes. Please try again later.';
+  });
 
 function validateCode() {
   const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
@@ -97,7 +105,7 @@ function validateCode() {
 
   found.used = true; // tandai sebagai used
   alert('✅ Code valid! Redirecting...');
-  window.location.href = 'https://is.gd/plinko88'; // redirect yang benar
+  window.location.href = 'https://is.gd/plinko88';
 }
 </script>
 </body>
