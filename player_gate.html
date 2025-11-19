@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Player Gate – Gold Black</title>
 <style>
-body { font-family: Arial, sans-serif; background: #000; color: #ffd700; text-align: center; padding: 60px 30px;}
+body { font-family: Arial; background: #000; color: #ffd700; text-align: center; padding: 60px 30px;}
 .gate { max-width: 420px; padding: 30px; margin: auto; border-radius: 20px; background: linear-gradient(145deg, #1a1a1a, #000); border: 2px solid #ffd700; box-shadow: 0 0 25px #ffcc00; }
 input { width: 80%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #ffd700; background: #0d0d0d; color: #ffd700; font-size: 16px; }
 button { padding: 12px 20px; border-radius: 10px; border: none; background: #ffd700; color: #000; font-weight: bold; font-size: 16px; cursor: pointer; }
@@ -24,50 +24,43 @@ button:hover { background: #ffea66; }
 </div>
 
 <script>
-const PLAYER_GATE_URL = 'https://gesg8899-prog.github.io/unique-code-gate/';
-const PLINKO_URL = 'https://gesg8899-prog.github.io/plinkoGE88/player_gate.html';
 const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
 let codes = [];
-let jsonLoaded = false;
 
-// Load JSON codes
-fetch(codesUrl)
-  .then(res => res.json())
-  .then(data => { 
-      if(!Array.isArray(data)) {
-          console.error('JSON invalid, must be array of objects with {code, used}');
-          document.getElementById('errorMsg').textContent = 'Code list is invalid. Contact admin.';
-          return;
-      }
-      codes = data.map(c => ({ code: c.code.trim().toUpperCase(), used: !!c.used }));
-      jsonLoaded = true;
+// Pakai fetch + CORS safe mode
+fetch(codesUrl, { cache: "no-cache" })
+  .then(res => {
+      if(!res.ok) throw new Error("Failed to fetch codes");
+      return res.json();
   })
-  .catch(err => {
-      console.error('Failed to load codes', err);
-      document.getElementById('errorMsg').textContent = 'Failed to load codes. Contact admin.';
-  });
+  .then(data => {
+      // Pastikan semua kode uppercase
+      codes = data.map(c => ({ code: c.code.toUpperCase(), used: c.used }));
+  })
+  .catch(err => console.error('Failed to load codes', err));
 
 function enterGame(){
-    if(!jsonLoaded){
-        document.getElementById('errorMsg').textContent = 'Codes not loaded yet. Try again.';
-        return;
-    }
-
     const inputCode = document.getElementById('codeInput').value.trim().toUpperCase();
     const errorMsg = document.getElementById('errorMsg');
     errorMsg.textContent = '';
 
     if(!inputCode){ errorMsg.textContent = 'Code cannot be empty'; return; }
 
+    // Cari kode
     const found = codes.find(c => c.code === inputCode);
     if(!found){ errorMsg.textContent = 'Code not found'; return; }
-    if(found.used){ errorMsg.textContent = 'Code already used'; return; }
 
-    // Tandai used di localStorage browser ini
+    // Cek jika sudah used
+    if(found.used || localStorage.getItem('played_' + inputCode) === 'true'){
+        errorMsg.textContent = 'Code already used';
+        return;
+    }
+
+    // Tandai used di browser
     localStorage.setItem('played_' + inputCode, 'true');
 
-    // Redirect ke plinko dengan kode di URL
-    window.location.href = PLINKO_URL + '?code=' + inputCode;
+    // Redirect ke Plinko game
+    window.location.href = 'https://gesg8899-prog.github.io/plinkoGE88/player_gate.html?code=' + inputCode;
 }
 </script>
 </body>
