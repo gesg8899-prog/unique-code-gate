@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Online Player Gate</title>
+<style>
+body { font-family: Arial; background:#1a0000; color:#ff0033; text-align:center; padding:60px 30px; }
+.gate { max-width:400px; padding:25px; margin:auto; border-radius:20px; background:linear-gradient(145deg,#330000,#660000); border:2px solid #ff0033; box-shadow:0 0 25px #ff0033; animation:glow 2s infinite alternate; }
+@keyframes glow { from{box-shadow:0 0 15px #ff0033;} to{box-shadow:0 0 35px #ff6699;} }
+input { width:80%; padding:12px; border-radius:10px; border:none; margin-bottom:15px; background:#330000; color:#ff0033; }
+button { padding:12px 20px; border-radius:10px; border:none; background:#ff0033; color:#fff; font-weight:bold; cursor:pointer; }
+.error { color:#ff6699; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="gate">
+<h1>🔥 Enter Your Unique Code 🔥</h1>
+<p>Input your code to continue playing</p>
+<input type="text" id="codeInput" placeholder="Enter your code">
+<br>
+<button onclick="validateCode()">Enter</button>
+<p class="error" id="errorMsg"></p>
+</div>
+
+<script>
+const codesUrl = 'https://username.github.io/unique-code-gate/player_codes.json'; // ganti sesuai repo
+let codes = [];
+fetch(codesUrl)
+.then(res=>res.json())
+.then(data=>codes=data)
+.catch(()=>console.log('Failed to load codes'));
+function validateCode(){
+const codeInput=document.getElementById('codeInput').value.trim().toUpperCase();
+const error=document.getElementById('errorMsg'); error.textContent='';
+if(!codeInput){error.textContent='Code cannot be empty'; return;}
+const found=codes.find(c=>c.code===codeInput);
+if(!found){error.textContent='Code not found'; return;}
+if(found.used){error.textContent='Code already used'; return;}
+found.used=true;
+alert('Code valid! Redirecting...');
+window.location.href='https://is.gd/plinko88';
+}
+</script>
+</body>
+</html>
