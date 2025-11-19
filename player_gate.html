@@ -24,15 +24,35 @@ button:hover { background: #ffea66; }
 </div>
 
 <script>
+const PLAYER_GATE_URL = 'https://gesg8899-prog.github.io/unique-code-gate/';
+const PLINKO_URL = 'https://gesg8899-prog.github.io/plinkoGE88/player_gate.html';
 const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
 let codes = [];
+let jsonLoaded = false;
 
+// Load JSON codes
 fetch(codesUrl)
   .then(res => res.json())
-  .then(data => codes = data)
-  .catch(() => console.log('Failed to load codes'));
+  .then(data => { 
+      if(!Array.isArray(data)) {
+          console.error('JSON invalid, must be array of objects with {code, used}');
+          document.getElementById('errorMsg').textContent = 'Code list is invalid. Contact admin.';
+          return;
+      }
+      codes = data.map(c => ({ code: c.code.trim().toUpperCase(), used: !!c.used }));
+      jsonLoaded = true;
+  })
+  .catch(err => {
+      console.error('Failed to load codes', err);
+      document.getElementById('errorMsg').textContent = 'Failed to load codes. Contact admin.';
+  });
 
 function enterGame(){
+    if(!jsonLoaded){
+        document.getElementById('errorMsg').textContent = 'Codes not loaded yet. Try again.';
+        return;
+    }
+
     const inputCode = document.getElementById('codeInput').value.trim().toUpperCase();
     const errorMsg = document.getElementById('errorMsg');
     errorMsg.textContent = '';
@@ -43,11 +63,11 @@ function enterGame(){
     if(!found){ errorMsg.textContent = 'Code not found'; return; }
     if(found.used){ errorMsg.textContent = 'Code already used'; return; }
 
-    // Tandai used di localStorage untuk browser ini
+    // Tandai used di localStorage browser ini
     localStorage.setItem('played_' + inputCode, 'true');
 
-    // Redirect ke Plinko Game dengan kode di URL
-    window.location.href = 'https://gesg8899-prog.github.io/plinkoGE88/player_gate.html?code=' + inputCode;
+    // Redirect ke plinko dengan kode di URL
+    window.location.href = PLINKO_URL + '?code=' + inputCode;
 }
 </script>
 </body>
