@@ -43,6 +43,9 @@
 <script>
 const url = "https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json";
 
+// LINK GAME JIKA CODE VALID
+const GAME_LINK = "https://gesg8899-prog.github.io/plinkoGE88/";  // <-- GANTI DI SINI
+
 async function checkCode() {
     const userCode = document.getElementById("codeInput").value.trim();
     const msg = document.getElementById("msg");
@@ -63,18 +66,11 @@ async function checkCode() {
 
         const data = await response.json();
 
-        // JSON harus format:
-        // { "codes": { "ABCD1234": "http://directlink.com/game" } }
+        // Cari code di dalam ARRAY
+        const found = data.find(item => item.code === userCode && item.used === false);
 
-        if (!data.codes) {
-            msg.textContent = "Invalid JSON format: missing 'codes'.";
-            return;
-        }
-
-        const gameLink = data.codes[userCode];
-
-        if (!gameLink) {
-            msg.textContent = "Access code not found.";
+        if (!found) {
+            msg.textContent = "Access code not found or already used.";
             return;
         }
 
@@ -82,7 +78,7 @@ async function checkCode() {
         msg.textContent = "Access Granted! Redirecting...";
 
         setTimeout(() => {
-            window.location.href = gameLink;
+            window.location.href = GAME_LINK;
         }, 800);
 
     } catch (error) {
