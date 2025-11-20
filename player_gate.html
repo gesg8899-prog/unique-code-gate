@@ -5,61 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Player Gate – Direct Access</title>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #000;
-  color: #ffd700;
-  text-align: center;
-  padding: 60px 30px;
-}
-.gate {
-  max-width: 450px;
-  margin: auto;
-  padding: 30px;
-  border-radius: 20px;
-  background: linear-gradient(145deg,#1a1a1a,#000);
-  border: 2px solid #ffd700;
-  box-shadow: 0 0 25px #ffcc00;
-}
-input {
-  width: 80%;
-  padding: 12px;
-  margin-bottom: 15px;
-  border-radius: 10px;
-  border: 1px solid #ffd700;
-  background: #0d0d0d;
-  color: #ffd700;
-  font-size: 16px;
-}
-button {
-  padding: 12px 20px;
-  border-radius: 10px;
-  border: none;
-  background: #ffd700;
-  color: #000;
-  font-weight: bold;
-  cursor: pointer;
-}
-button:hover { background: #ffea66; }
-#errorMsg {
-  margin-top: 10px;
-  font-weight: bold;
-}
-.error { color: #ff6666; }
-.success { color: #66ff66; }
+body { font-family: Arial, sans-serif; background:#000; color:#ffd700; text-align:center; padding:60px 30px; }
+.gate { max-width:450px; margin:auto; padding:30px; border-radius:20px; background:linear-gradient(145deg,#1a1a1a,#000); border:2px solid #ffd700; box-shadow:0 0 25px #ffcc00; }
+input { width:80%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ffd700; background:#0d0d0d; color:#ffd700; font-size:16px; }
+button { padding:12px 20px; border-radius:10px; border:none; background:#ffd700; color:#000; font-weight:bold; cursor:pointer; }
+button:hover { background:#ffea66; }
+#errorMsg { margin-top:10px; font-weight:bold; }
+.error { color:#ff6666; }
+.success { color:#66ff66; }
 </style>
 </head>
 <body>
 <div class="gate">
-  <h1>Enter Your Access Code</h1>
-  <input type="text" id="codeInput" placeholder="Enter your code">
-  <br>
-  <button onclick="validateCode()">Enter</button>
-  <p id="errorMsg"></p>
+<h1>Enter Your Access Code</h1>
+<input type="text" id="codeInput" placeholder="Enter your code">
+<br>
+<button onclick="validateCode()">Enter</button>
+<p id="errorMsg"></p>
 </div>
 
 <script>
-// URL JSON dari GitHub Pages
 const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
 const redirectURL = 'https://is.gd/plinko88';
 
@@ -69,7 +34,7 @@ async function validateCode() {
   msg.textContent = '';
   msg.className = '';
 
-  if(!codeInput) {
+  if(!codeInput){
     msg.textContent = 'Code cannot be empty';
     msg.className = 'error';
     return;
@@ -79,15 +44,16 @@ async function validateCode() {
     const res = await fetch(codesUrl + '?ts=' + Date.now());
     if(!res.ok) throw new Error('Failed to fetch codes');
     const codes = await res.json();
+
     const found = codes.find(c => c.code === codeInput);
 
-    if(!found) {
+    if(!found){
       msg.textContent = 'Code not found';
       msg.className = 'error';
       return;
     }
 
-    if(found.used) {
+    if(found.used){
       msg.textContent = 'Code already used';
       msg.className = 'error';
       return;
@@ -96,11 +62,9 @@ async function validateCode() {
     // ✅ Code valid → langsung redirect
     msg.textContent = 'Access Granted. Redirecting...';
     msg.className = 'success';
-    setTimeout(() => {
-      window.location.href = redirectURL;
-    }, 600);
+    setTimeout(()=>window.location.href=redirectURL,600);
 
-  } catch(e) {
+  } catch(e){
     console.error(e);
     msg.textContent = 'Connection error';
     msg.className = 'error';
