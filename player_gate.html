@@ -7,7 +7,7 @@
 <style>
 body {
   font-family: Arial, sans-serif;
-  background: #000000;
+  background: #000;
   color: #ffd700;
   text-align: center;
   padding: 60px 30px;
@@ -17,12 +17,10 @@ body {
   padding: 30px;
   margin: auto;
   border-radius: 20px;
-  background: linear-gradient(145deg, #1a1a1a, #000000);
+  background: linear-gradient(145deg, #1a1a1a, #000);
   border: 2px solid #ffd700;
   box-shadow: 0 0 25px #ffcc00;
-  animation: glow 2s infinite alternate;
 }
-@keyframes glow { from { box-shadow: 0 0 15px #ccac00; } to { box-shadow: 0 0 35px #ffe680; } }
 input {
   width: 80%;
   padding: 12px;
@@ -42,7 +40,6 @@ button {
   font-weight: bold;
   font-size: 16px;
   cursor: pointer;
-  transition: 0.2s;
 }
 button:hover { background: #ffea66; }
 .error { color: #ff6666; margin-top: 10px; }
@@ -51,67 +48,66 @@ button:hover { background: #ffea66; }
 </head>
 <body>
 <div class="gate">
-  <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 10px;">Enter Your Unique Access Code</h1>
-  <p>Input your code to continue</p>
+  <h1>Enter Your Unique Access Code</h1>
   <input type="text" id="codeInput" placeholder="Enter your code">
   <br>
   <button onclick="validateCode()">Enter</button>
-  <p class="error" id="msg"></p>
+  <p id="msg" class="error"></p>
 </div>
 
 <script>
-// ================================
-// CONFIG
-// ================================
 const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
 const redirectURL = 'https://gesg8899-prog.github.io/plinkoGE88/galactic_plinko.html';
-
 let codes = [];
 
-// ================================
-// LOAD CODES
-// ================================
-fetch(codesUrl)
-  .then(res => res.json())
-  .then(data => codes = data)
-  .catch(() => console.log('Failed to load codes'));
-
-// ================================
-// VALIDATE CODE
-// ================================
-function validateCode() {
-    const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
-    const msg = document.getElementById('msg');
-    msg.textContent = '';
-    
-    if (!codeInput) {
-        msg.textContent = 'Code cannot be empty';
-        msg.className = 'error';
-        return;
-    }
-    
-    const found = codes.find(c => c.code === codeInput);
-    
-    if (!found) {
-        msg.textContent = 'Code not found';
-        msg.className = 'error';
-        return;
-    }
-
-    if (found.used) {
-        msg.textContent = 'Code already used';
-        msg.className = 'error';
-        return;
-    }
-    
-    // SUCCESS → redirect ke game dengan kode
-    msg.textContent = '✅ Code valid! Redirecting...';
-    msg.className = 'success';
-    localStorage.setItem('playerCode', codeInput); // simpan di browser
-    setTimeout(() => {
-        window.location.href = redirectURL + '?code=' + encodeURIComponent(codeInput);
-    }, 800);
+// Load codes
+async function loadCodes() {
+  try {
+    const res = await fetch(codesUrl, {cache:'no-store'});
+    if(!res.ok) throw new Error('Cannot fetch JSON');
+    codes = await res.json();
+    if(!Array.isArray(codes)) throw new Error('JSON invalid format');
+    console.log('Codes loaded:', codes);
+  } catch(e) {
+    document.getElementById('msg').textContent = 'Failed to load codes. Check console.';
+    console.error(e);
+  }
 }
+
+// Validate code
+function validateCode() {
+  const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
+  const msg = document.getElementById('msg');
+  msg.textContent = '';
+
+  if(!codes.length){
+    msg.textContent = 'Codes not loaded yet.';
+    return;
+  }
+
+  if(!codeInput){
+    msg.textContent = 'Code cannot be empty';
+    return;
+  }
+
+  const found = codes.find(c=>c.code === codeInput);
+  if(!found){
+    msg.textContent = 'Code not found';
+    return;
+  }
+  if(found.used){
+    msg.textContent = 'Code already used';
+    return;
+  }
+
+  // Success
+  localStorage.setItem('playerCode', codeInput);
+  alert('✅ Code valid! Redirecting to game...');
+  window.location.href = redirectURL + '?code=' + encodeURIComponent(codeInput);
+}
+
+// Initial load
+loadCodes();
 </script>
 </body>
 </html>
