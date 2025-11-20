@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Auto Sync Edition</title>
+<title>Player Gate – Gold Black</title>
 <style>
 body { font-family: Arial, sans-serif; background:#000; color:#ffd700; text-align:center; padding:60px 30px; }
 .gate { max-width:450px; margin:auto; padding:30px; border-radius:20px; background:linear-gradient(145deg,#1a1a1a,#000); border:2px solid #ffd700; box-shadow:0 0 25px #ffcc00; }
 input { width:80%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ffd700; background:#0d0d0d; color:#ffd700; font-size:16px; }
-button { padding:12px 20px; border-radius:10px; border:none; background:#ffd700; color:#000; font-weight:bold; font-size:16px; cursor:pointer; transition:0.2s; }
+button { padding:12px 20px; border-radius:10px; border:none; background:#ffd700; color:#000; font-weight:bold; font-size:16px; cursor:pointer; transition:.2s; }
 button:hover { background:#ffea66; }
 #errorMsg { margin-top:10px; font-weight:bold; }
 .error { color:#ff6666; }
@@ -17,44 +17,36 @@ button:hover { background:#ffea66; }
 </head>
 <body>
 <div class="gate">
-  <h1 style="font-size:28px; font-weight:700; text-shadow:0 0 12px #ffd700;">Enter Your Access Code</h1>
-  <input type="text" id="codeInput" placeholder="Enter your code">
-  <br>
-  <button onclick="validateCode()">Enter</button>
-  <p id="errorMsg" class=""></p>
+<h1 style="font-size:28px; font-weight:700; text-shadow:0 0 12px #ffd700;">Enter Your Access Code</h1>
+<input type="text" id="codeInput" placeholder="Enter your code">
+<br>
+<button onclick="validateCode()">Enter</button>
+<p id="errorMsg"></p>
 </div>
 
 <script>
-// ================================
-// CONFIG
-// ================================
-const codesUrl = 'https://gesg8899-prog.github.io/plinkoGE88/player_codes.json';
+// URL GitHub Pages JSON (public)
+const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
 const redirectURL = 'https://is.gd/plinko88';
-const adminEndpoint = 'http://127.0.0.1:5500/update_code.php'; 
-// ini contoh endpoint di server/Admin Generator yang akan menerima POST { code: "XXXXX" } dan update GitHub
 
 let codes = [];
 
-// ================================
-// FETCH CODES
-// ================================
+// Load codes
 async function loadCodes() {
   try {
     const res = await fetch(codesUrl + '?ts=' + Date.now());
     codes = await res.json();
   } catch(e) {
-    console.error('Failed to load codes', e);
     const msg = document.getElementById('errorMsg');
     msg.textContent = 'Failed to load codes';
     msg.className = 'error';
+    console.error(e);
   }
 }
 
-// ================================
-// VALIDATE & AUTO-SYNC
-// ================================
+// Validate code
 async function validateCode() {
-  if(codes.length === 0) await loadCodes();
+  if(codes.length===0) await loadCodes();
 
   const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
   const msg = document.getElementById('errorMsg');
@@ -67,8 +59,7 @@ async function validateCode() {
     return;
   }
 
-  const found = codes.find(c => c.code === codeInput);
-
+  const found = codes.find(c => c.code===codeInput);
   if(!found) {
     msg.textContent = 'Code not found';
     msg.className = 'error';
@@ -81,25 +72,24 @@ async function validateCode() {
     return;
   }
 
-  // Tandai digunakan lokal
+  // Tandai lokal
   found.used = true;
 
   // Kirim ke Admin Generator untuk update GitHub
   try {
-    const res = await fetch(adminEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch('http://127.0.0.1:5500/admin_sync.php', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({ code: codeInput })
     });
-
     const result = await res.json();
 
     if(result.success) {
       msg.textContent = '✅ Code valid! Redirecting...';
       msg.className = 'success';
-      setTimeout(()=>{ window.location.href = redirectURL; }, 800);
+      setTimeout(()=>window.location.href=redirectURL, 800);
     } else {
-      msg.textContent = 'Failed to sync code';
+      msg.textContent = 'Failed to sync code with server';
       msg.className = 'error';
     }
   } catch(e) {
@@ -109,7 +99,7 @@ async function validateCode() {
   }
 }
 
-// Load codes saat page load
+// Load codes on page load
 loadCodes();
 </script>
 </body>
