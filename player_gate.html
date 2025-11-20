@@ -7,20 +7,22 @@
 <style>
 body {
   font-family: Arial, sans-serif;
-  background: #000;
+  background: #000000;
   color: #ffd700;
   text-align: center;
   padding: 60px 30px;
 }
 .gate {
-  max-width: 450px;
-  margin: auto;
+  max-width: 420px;
   padding: 30px;
+  margin: auto;
   border-radius: 20px;
-  background: linear-gradient(145deg, #1a1a1a, #000);
+  background: linear-gradient(145deg, #1a1a1a, #000000);
   border: 2px solid #ffd700;
   box-shadow: 0 0 25px #ffcc00;
+  animation: glow 2s infinite alternate;
 }
+@keyframes glow { from { box-shadow: 0 0 15px #ccac00; } to { box-shadow: 0 0 35px #ffe680; } }
 input {
   width: 80%;
   padding: 12px;
@@ -33,64 +35,82 @@ input {
 }
 button {
   padding: 12px 20px;
-  margin: 5px;
   border-radius: 10px;
   border: none;
   background: #ffd700;
   color: #000;
   font-weight: bold;
+  font-size: 16px;
   cursor: pointer;
+  transition: 0.2s;
 }
 button:hover { background: #ffea66; }
-.error { color: #ff4040; margin-top: 10px; }
+.error { color: #ff6666; margin-top: 10px; }
 .success { color: #66ff66; margin-top: 10px; }
 </style>
 </head>
 <body>
 <div class="gate">
-  <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 10px;">Enter Access Code</h1>
+  <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 10px;">Enter Your Unique Access Code</h1>
+  <p>Input your code to continue</p>
   <input type="text" id="codeInput" placeholder="Enter your code">
+  <br>
   <button onclick="validateCode()">Enter</button>
-  <p id="msg"></p>
+  <p class="error" id="msg"></p>
 </div>
 
 <script>
+// ================================
 // CONFIG
-const codesUrl = 'https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json';
-const redirectURL = 'https://is.gd/plinko88';
+// ================================
+const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
+const redirectURL = 'https://gesg8899-prog.github.io/plinkoGE88/galactic_plinko.html';
 
 let codes = [];
 
-// FETCH CODES
+// ================================
+// LOAD CODES
+// ================================
 fetch(codesUrl)
   .then(res => res.json())
   .then(data => codes = data)
   .catch(() => console.log('Failed to load codes'));
 
+// ================================
+// VALIDATE CODE
+// ================================
 function validateCode() {
-  const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
-  const msg = document.getElementById('msg');
-  msg.textContent = '';
+    const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
+    const msg = document.getElementById('msg');
+    msg.textContent = '';
+    
+    if (!codeInput) {
+        msg.textContent = 'Code cannot be empty';
+        msg.className = 'error';
+        return;
+    }
+    
+    const found = codes.find(c => c.code === codeInput);
+    
+    if (!found) {
+        msg.textContent = 'Code not found';
+        msg.className = 'error';
+        return;
+    }
 
-  if (!codeInput) {
-    msg.textContent = 'Code cannot be empty';
-    msg.className = 'error';
-    return;
-  }
-
-  const found = codes.find(c => c.code === codeInput);
-  if (!found) {
-    msg.textContent = 'Code not found';
-    msg.className = 'error';
-    return;
-  }
-
-  // Kode valid → redirect
-  msg.textContent = '✅ Code valid! Redirecting...';
-  msg.className = 'success';
-  setTimeout(() => {
-    window.location.href = redirectURL;
-  }, 800);
+    if (found.used) {
+        msg.textContent = 'Code already used';
+        msg.className = 'error';
+        return;
+    }
+    
+    // SUCCESS → redirect ke game dengan kode
+    msg.textContent = '✅ Code valid! Redirecting...';
+    msg.className = 'success';
+    localStorage.setItem('playerCode', codeInput); // simpan di browser
+    setTimeout(() => {
+        window.location.href = redirectURL + '?code=' + encodeURIComponent(codeInput);
+    }, 800);
 }
 </script>
 </body>
