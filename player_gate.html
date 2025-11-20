@@ -3,90 +3,112 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Auto Sync</title>
+<title>Admin Generator + Player Gate</title>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <style>
-body{font-family:sans-serif;background:#000;color:#ffd700;text-align:center;padding:60px;}
-.gate{max-width:450px;margin:auto;padding:30px;border-radius:20px;background:linear-gradient(145deg,#1a1a1a,#000);border:2px solid #ffd700;box-shadow:0 0 25px #ffcc00;}
-input{width:80%;padding:12px;margin-bottom:15px;border-radius:10px;border:1px solid #ffd700;background:#0d0d0d;color:#ffd700;font-size:16px;}
-button{padding:12px 20px;border-radius:10px;border:none;background:#ffd700;color:#000;font-weight:bold;cursor:pointer;}
+body{font-family:sans-serif;background:#000;color:#ffd700;text-align:center;padding:40px;}
+.card{background:rgba(20,20,20,0.7);border:2px solid rgba(255,215,0,0.6);border-radius:25px;padding:35px;max-width:700px;margin:auto;backdrop-filter:blur(8px);box-shadow:0 0 25px rgba(255,215,0,0.25),0 0 50px rgba(255,215,0,0.1) inset;}
+input,button{width:80%;padding:12px;margin:10px 0;border-radius:10px;font-size:16px;}
+input{border:1px solid #d4af37;background:rgba(30,30,30,0.9);color:#ffd700;}
+button{background:#ffd700;border:none;color:#000;font-weight:bold;cursor:pointer;}
 button:hover{background:#ffea66;}
-.error{color:#ff4040;margin-top:10px;}
-.success{color:#66ff66;margin-top:10px;}
+table{width:100%;border-collapse:collapse;margin-top:25px;}
+th,td{padding:12px;border-bottom:1px solid rgba(255,215,0,0.2);}
 </style>
 </head>
 <body>
-<div class="gate">
-<h1>Enter Access Code</h1>
-<input type="text" id="codeInput" placeholder="Enter your code">
-<input type="text" id="accessToken" placeholder="Admin Token (scope: repo)">
-<button onclick="validateCode()">Enter</button>
-<p id="msg"></p>
+<div class="card">
+<h1>✨ Admin Generator + Player Gate ✨</h1>
+
+<label>Number of Codes to Generate:</label>
+<input type="number" id="codeCount" placeholder="Enter number of codes" min="1" max="200">
+<button onclick="generateCodes()">Generate Codes</button>
+<br>
+<button onclick="downloadJSON()">Download JSON</button>
+<button onclick="downloadExcel()">Download Excel</button>
+
+<h3>Generated Codes & Links</h3>
+<table id="codeTable">
+<thead><tr><th>Code</th><th>Direct Link</th></tr></thead>
+<tbody></tbody>
+</table>
 </div>
 
 <script>
-// ================================
+let codes=[];
+
 // CONFIG
-// ================================
 const username="gesg8899-prog";
 const repo="unique-code-gate";
 const filePath="player_codes.json";
 const redirectURL="https://is.gd/plinko88";
+const token="GANTI_DENGAN_TOKEN_ADMIN_GENERATOR"; // token aman
 
-async function fetchCodes(token){
-    const res=await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${filePath}?ts=${Date.now()}`,{
-        headers:{ "Authorization": `Bearer ${token}` }
-    });
-    if(res.status===200){
-        const data=await res.json();
-        const json=atob(data.content);
-        return {codes: JSON.parse(json), sha: data.sha};
-    } else {
-        throw new Error("Failed to fetch codes. Status: "+res.status);
-    }
+// RANDOM CODE GENERATOR
+function generateRandomCode(length=8){
+  const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result='';
+  for(let i=0;i<length;i++) result+=chars.charAt(Math.floor(Math.random()*chars.length));
+  if(codes.some(c=>c.code===result)) return generateRandomCode(length);
+  return result;
 }
 
-async function saveCodes(token,codes,sha){
-    const content=btoa(JSON.stringify(codes,null,2));
+function generateCodes(){
+  const count=parseInt(document.getElementById('codeCount').value);
+  if(!count || count<1){ alert('Please enter a valid number!'); return; }
+  codes=[];
+  for(let i=0;i<count;i++) codes.push({code:generateRandomCode(),used:false});
+  renderTable();
+}
+
+// RENDER TABLE
+function renderTable(){
+  const tbody=document.querySelector('#codeTable tbody');
+  tbody.innerHTML='';
+  codes.forEach(c=>{
+    const tr=document.createElement('tr');
+    const link=`player_gate.html?code=${c.code}`;
+    tr.innerHTML=`<td>${c.code}</td><td><a href="${link}" target="_blank">${link}</a></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// DOWNLOAD JSON
+function downloadJSON(){
+  const blob=new Blob([JSON.stringify(codes,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='player_codes.json';
+  a.click();
+}
+
+// DOWNLOAD EXCEL
+function downloadExcel(){
+  const worksheet=XLSX.utils.json_to_sheet(codes);
+  const workbook=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook,worksheet,"Codes");
+  XLSX.writeFile(workbook,"player_codes.xlsx");
+}
+
+// UPLOAD TO GITHUB
+async function uploadToGitHub(){
+  const fileContent=btoa(JSON.stringify(codes,null,2));
+  // GET SHA
+  let sha=null;
+  try{
     const res=await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${filePath}`,{
-        method:"PUT",
-        headers:{
-            "Content-Type":"application/json",
-            "Authorization":`Bearer ${token}`
-        },
-        body:JSON.stringify({message:"Update code usage",content:content,sha:sha})
+      headers:{ "Authorization": `Bearer ${token}` }
     });
-    return res.ok;
-}
-
-// ================================
-// VALIDATE CODE
-// ================================
-async function validateCode(){
-    const msg=document.getElementById("msg");
-    msg.textContent="";
-    const codeInput=document.getElementById("codeInput").value.trim().toUpperCase();
-    const token=document.getElementById("accessToken").value.trim();
-    if(!codeInput){ msg.textContent="Code cannot be empty"; msg.className="error"; return; }
-    if(!token){ msg.textContent="Token required"; msg.className="error"; return; }
-
-    try{
-        msg.textContent="Fetching codes..."; msg.className="";
-        const {codes, sha}=await fetchCodes(token);
-        const entry=codes.find(c=>c.code===codeInput);
-        if(!entry){ msg.textContent="Code not found"; msg.className="error"; return; }
-        if(entry.used){ msg.textContent="Code already used"; msg.className="error"; return; }
-
-        entry.used=true;
-        msg.textContent="Updating server..."; msg.className="success";
-        const ok=await saveCodes(token,codes,sha);
-        if(!ok){ msg.textContent="Failed to update server"; msg.className="error"; return; }
-
-        msg.textContent="Access granted! Redirecting..."; msg.className="success";
-        setTimeout(()=>{ window.location.href=redirectURL; },800);
-    } catch(e){
-        console.error(e);
-        msg.textContent="Connection error or invalid token"; msg.className="error";
-    }
+    if(res.ok){ const data=await res.json(); sha=data.sha; }
+  }catch(e){console.error(e);}
+  // UPLOAD
+  const uploadRes=await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${filePath}`,{
+    method:"PUT",
+    headers:{ "Content-Type":"application/json","Authorization":`Bearer ${token}` },
+    body:JSON.stringify({message:"Upload updated player codes",content:fileContent,sha:sha??undefined})
+  });
+  if(uploadRes.ok) alert("Upload SUCCESS! 🎉");
+  else alert("Upload FAILED ❌ Check console for details");
 }
 </script>
 </body>
