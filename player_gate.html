@@ -4,134 +4,127 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Player Gate – Gold Black</title>
-
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background: #000000;
-        color: #ffd700;
-        text-align: center;
-        padding: 60px 30px;
-    }
-    .gate {
-        max-width: 420px;
-        padding: 30px;
-        margin: auto;
-        border-radius: 20px;
-        background: linear-gradient(145deg, #1a1a1a, #000000);
-        border: 2px solid #ffd700;
-        box-shadow: 0 0 25px #ffcc00;
-        animation: glow 2s infinite alternate;
-    }
-    @keyframes glow {
-        from { box-shadow: 0 0 15px #ccac00; }
-        to { box-shadow: 0 0 35px #ffe680; }
-    }
-    input {
-        width: 80%;
-        padding: 12px;
-        margin-bottom: 15px;
-        border-radius: 10px;
-        border: 1px solid #ffd700;
-        background: #0d0d0d;
-        color: #ffd700;
-        font-size: 16px;
-    }
-    button {
-        padding: 12px 20px;
-        border-radius: 10px;
-        border: none;
-        background: #ffd700;
-        color: #000;
-        font-weight: bold;
-        font-size: 16px;
-        cursor: pointer;
-        transition: 0.2s;
-    }
-    button:hover {
-        background: #ffea66;
-    }
-    .error {
-        color: #ff6666;
-        margin-top: 10px;
-    }
+body {
+  font-family: Arial, sans-serif;
+  background: #000000;
+  color: #ffd700;
+  text-align: center;
+  padding: 60px 30px;
+}
+.gate {
+  max-width: 420px;
+  padding: 30px;
+  margin: auto;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #1a1a1a, #000000);
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 25px #ffcc00;
+  animation: glow 2s infinite alternate;
+}
+@keyframes glow {
+  from { box-shadow: 0 0 15px #ccac00; }
+  to { box-shadow: 0 0 35px #ffe680; }
+}
+input {
+  width: 80%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  border: 1px solid #ffd700;
+  background: #0d0d0d;
+  color: #ffd700;
+  font-size: 16px;
+}
+button {
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: none;
+  background: #ffd700;
+  color: #000;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+button:hover { background: #ffea66; }
+#errorMsg {
+  margin-top: 10px;
+  font-weight: bold;
+}
+.error { color: #ff6666; }
+.success { color: #66ff66; }
 </style>
 </head>
-
 <body>
-
 <div class="gate">
-    <h1 style="font-size: 28px; font-weight: 700; letter-spacing: 1px; 
-               margin-bottom: 10px; text-shadow: 0 0 12px #ffd700;">
-        Enter Your Unique Access Code
-    </h1>
-
-    <p>Input your code to continue</p>
-    <input type="text" id="codeInput" placeholder="Enter your code">
-    <br>
-    <button onclick="validateCode()">Enter</button>
-    <p class="error" id="errorMsg"></p>
+  <h1 style="font-size: 28px; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px; text-shadow: 0 0 12px #ffd700;">Enter Your Unique Access Code</h1>
+  <p>Input your code to continue</p>
+  <input type="text" id="codeInput" placeholder="Enter your code">
+  <br>
+  <button onclick="validateCode()">Enter</button>
+  <p id="errorMsg"></p>
 </div>
 
 <script>
-const codesUrl = "https://gesg8899-prog.github.io/plinkoGE88/player_codes.json";
-
+// URL JSON GitHub Pages
+const codesUrl = 'https://gesg8899-prog.github.io/plinkoGE88/player_codes.json';
 let codes = [];
-let loaded = false;
 
-// --- Load JSON Correctly ---
+// Fetch codes (with timestamp to avoid cache)
 async function loadCodes() {
-    try {
-        const res = await fetch(codesUrl, { cache: "no-store" });
-        if (!res.ok) throw new Error("JSON NOT FOUND");
-
-        const data = await res.json();
-        codes = data;
-        loaded = true;
-
-        console.log("Codes Loaded:", codes); // Untuk cek di console
-    } catch (e) {
-        document.getElementById("errorMsg").textContent = "Failed to load code list";
-    }
+  try {
+    const res = await fetch(codesUrl + '?ts=' + Date.now());
+    codes = await res.json();
+  } catch(e) {
+    console.error('Failed to load codes', e);
+    document.getElementById('errorMsg').textContent = 'Failed to load codes';
+    document.getElementById('errorMsg').className = 'error';
+  }
 }
 
+// Validate input code
+async function validateCode() {
+  await loadCodes(); // load latest codes
+  const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
+  const msg = document.getElementById('errorMsg');
+  msg.textContent = '';
+  msg.className = '';
+
+  if (!codeInput) {
+    msg.textContent = 'Code cannot be empty';
+    msg.className = 'error';
+    return;
+  }
+
+  const found = codes.find(c => c.code === codeInput);
+
+  if (!found) {
+    msg.textContent = 'Code not found';
+    msg.className = 'error';
+    return;
+  }
+
+  if (found.used) {
+    msg.textContent = 'Code already used';
+    msg.className = 'error';
+    return;
+  }
+
+  // Tandai used (di sini hanya lokal, GitHub sync dilakukan lewat Admin Generator)
+  found.used = true;
+
+  msg.textContent = '✅ Code valid! Redirecting...';
+  msg.className = 'success';
+
+  // Redirect
+  setTimeout(() => {
+    window.location.href = 'https://is.gd/plinko88';
+  }, 800);
+}
+
+// Load codes immediately
 loadCodes();
-
-// --- Validate Code ---
-function validateCode() {
-    const codeInput = document.getElementById("codeInput").value.trim().toUpperCase();
-    const error = document.getElementById("errorMsg");
-    error.textContent = "";
-
-    if (!loaded) {
-        error.textContent = "Code list not loaded. Please wait 2 seconds.";
-        return;
-    }
-
-    if (!codeInput) {
-        error.textContent = "Code cannot be empty";
-        return;
-    }
-
-    const found = codes.find(c => c.code === codeInput);
-
-    if (!found) {
-        error.textContent = "Code not found";
-        return;
-    }
-
-    if (found.used) {
-        error.textContent = "Code already used";
-        return;
-    }
-
-    // Mark as used (client side only)
-    found.used = true;
-
-    alert("✅ Code valid! Redirecting...");
-    window.location.href = "https://is.gd/plinko88";
-}
 </script>
-
 </body>
 </html>
