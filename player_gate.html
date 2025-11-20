@@ -3,54 +3,73 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate</title>
+<title>Player Gate – Gold Royale</title>
+<style>
+body { font-family: Arial, sans-serif; background:#000; color:#ffd700; text-align:center; padding:60px 30px; }
+.gate { max-width:450px; margin:auto; padding:30px; border-radius:20px; background:linear-gradient(145deg,#1a1a1a,#000); border:2px solid #ffd700; box-shadow:0 0 25px #ffcc00; }
+input { width:80%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ffd700; background:#0d0d0d; color:#ffd700; font-size:16px; }
+button { padding:12px 20px; border-radius:10px; border:none; background:#ffd700; color:#000; font-weight:bold; cursor:pointer; }
+button:hover { background:#ffea66; }
+#errorMsg { margin-top:10px; font-weight:bold; }
+.error { color:#ff6666; }
+.success { color:#66ff66; }
+</style>
 </head>
 <body>
-<h2>Enter Your Access Code</h2>
-<input type="text" id="codeInput" placeholder="Enter code">
-<button onclick="checkCode()">Enter</button>
-<p id="msg"></p>
+<div class="gate">
+<h1>Enter Your Access Code</h1>
+<input type="text" id="codeInput" placeholder="Enter your code">
+<br>
+<button onclick="validateCode()">Enter</button>
+<p id="errorMsg"></p>
+</div>
 
 <script>
-// JSON dengan daftar kode yang valid
+// URL JSON dari GitHub Pages
 const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
-// Link target setelah kode valid
-const redirectURL = 'https://gesg8899-prog.github.io/plinkoGE88/';
+const redirectURL = 'https://is.gd/plinko88';
 
-async function checkCode() {
-    const code = document.getElementById('codeInput').value.trim().toUpperCase();
-    const msg = document.getElementById('msg');
-    msg.textContent = '';
+// Validasi kode
+async function validateCode() {
+  const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
+  const msg = document.getElementById('errorMsg');
+  msg.textContent = '';
+  msg.className = '';
 
-    if (!code) {
-        msg.textContent = 'Please enter a code';
-        msg.style.color = 'red';
-        return;
+  if(!codeInput){
+    msg.textContent = 'Please enter your access code';
+    msg.className = 'error';
+    return;
+  }
+
+  try {
+    const res = await fetch(codesUrl + '?ts=' + Date.now());
+    if(!res.ok) throw new Error('Failed to fetch codes');
+    const codes = await res.json();
+
+    const found = codes.find(c => c.code === codeInput);
+
+    if(!found){
+      msg.textContent = 'Code not found';
+      msg.className = 'error';
+      return;
     }
 
-    try {
-        const res = await fetch(codesUrl + '?ts=' + Date.now());
-        if (!res.ok) throw new Error('Cannot fetch codes');
-
-        const codes = await res.json();
-        const found = codes.find(c => c.code === code);
-
-        if (!found) {
-            msg.textContent = 'Invalid code';
-            msg.style.color = 'red';
-            return;
-        }
-
-        // ✅ Kode valid → langsung redirect
-        msg.textContent = 'Access Granted. Redirecting...';
-        msg.style.color = 'green';
-        window.location.href = redirectURL;
-
-    } catch (e) {
-        console.error(e);
-        msg.textContent = 'Connection error';
-        msg.style.color = 'red';
+    // Tandai dipakai di browser ini (localStorage) supaya bisa dipakai berkali-kali
+    if(!localStorage.getItem(`code_${codeInput}`)){
+      localStorage.setItem(`code_${codeInput}`, 'true');
     }
+
+    // Langsung redirect ke game
+    msg.textContent = 'Access Granted. Redirecting...';
+    msg.className = 'success';
+    setTimeout(()=>window.location.href=redirectURL,600);
+
+  } catch(e){
+    console.error(e);
+    msg.textContent = 'Connection error';
+    msg.className = 'error';
+  }
 }
 </script>
 </body>
