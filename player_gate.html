@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Auto Update GitHub</title>
+<title>Player Gate – Read Only</title>
 <style>
 body { font-family: Arial,sans-serif; background:#000; color:#ffd700; text-align:center; padding:60px 30px; }
 .gate { max-width:450px; margin:auto; padding:30px; border-radius:20px; background:linear-gradient(145deg,#1a1a1a,#000); border:2px solid #ffd700; box-shadow:0 0 25px #ffcc00; }
@@ -23,38 +23,19 @@ button { padding:12px 20px; margin:5px; border-radius:10px; border:none; backgro
 
 <script>
 const rawURL = "https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json";
-const githubAPI = "https://api.github.com/repos/gesg8899-prog/unique-code-gate/contents/player_codes.json";
 const redirectURL = "https://is.gd/plinko88";
 
-// Masukkan tokenmu di sini
-const token = "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";
-
-// Load codes
+// Load codes (read-only)
 async function loadCodes() {
   const res = await fetch(rawURL + "?t=" + Date.now());
   if (!res.ok) throw new Error("Failed to load JSON");
   return await res.json();
 }
 
-// Update GitHub
-async function saveToGitHub(updatedCodes) {
-  const getFile = await fetch(githubAPI, {
-    headers: { "Authorization": `Bearer ${token}` }
-  });
-  const fileData = await getFile.json();
-  const newContent = btoa(JSON.stringify(updatedCodes,null,2));
-  const upload = await fetch(githubAPI, {
-    method: "PUT",
-    headers: { "Content-Type":"application/json", "Authorization":`Bearer ${token}` },
-    body: JSON.stringify({ message:"Update used code", content:newContent, sha:fileData.sha })
-  });
-  return upload.ok;
-}
-
-// Validate code
 async function validateCode() {
   const msg = document.getElementById("msg");
   msg.textContent = "";
+
   const code = document.getElementById("codeInput").value.trim().toUpperCase();
   if (!code) { msg.textContent="Code cannot be empty"; msg.className="error"; return; }
 
@@ -64,13 +45,9 @@ async function validateCode() {
     if (!entry) { msg.textContent="Code not found"; msg.className="error"; return; }
     if (entry.used) { msg.textContent="Code already used"; msg.className="error"; return; }
 
-    entry.used = true; // mark used
-    msg.textContent="Updating server..."; msg.className="success";
-
-    const ok = await saveToGitHub(codes);
-    if (!ok) { msg.textContent="Failed to update server"; msg.className="error"; return; }
-
-    msg.textContent="Access Granted! Redirecting..."; msg.className="success";
+    // SUCCESS -> redirect
+    msg.textContent="Access Granted! Redirecting...";
+    msg.className="success";
     setTimeout(()=>{ window.location.href=redirectURL; },800);
 
   } catch(e) { msg.textContent="Connection error"; msg.className="error"; }
