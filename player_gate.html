@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Secure Access</title>
+<title>Player Gate – Gold Black</title>
 <style>
 body {
   font-family: Arial, sans-serif;
@@ -48,7 +48,7 @@ button:hover { background: #ffea66; }
 </head>
 <body>
 <div class="gate">
-  <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 10px;">Enter Your Access Code</h1>
+  <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 10px;">Enter Access Code</h1>
   <input type="text" id="codeInput" placeholder="Enter your code">
   <button onclick="validateCode()">Enter</button>
   <p id="msg"></p>
@@ -61,7 +61,7 @@ const redirectURL = 'https://is.gd/plinko88';
 
 let codes = [];
 
-// Ambil kode terbaru dari GitHub
+// FETCH CODES
 fetch(codesUrl)
   .then(res => res.json())
   .then(data => codes = data)
@@ -81,12 +81,6 @@ function validateCode() {
   const found = codes.find(c => c.code === codeInput);
   if (!found) {
     msg.textContent = 'Code not found';
-    msg.className = 'error';
-    return;
-  }
-
-  if (found.used) {
-    msg.textContent = 'Code already used';
     msg.className = 'error';
     return;
   }
