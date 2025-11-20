@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Gold Black</title>
+<title>Player Gate – Read-Only with Local Cache</title>
 <style>
 body {
   font-family: Arial, sans-serif;
@@ -13,9 +13,9 @@ body {
   padding: 60px 30px;
 }
 .gate {
-  max-width: 420px;
-  padding: 30px;
+  max-width: 450px;
   margin: auto;
+  padding: 30px;
   border-radius: 20px;
   background: linear-gradient(145deg, #1a1a1a, #000);
   border: 2px solid #ffd700;
@@ -33,95 +33,102 @@ input {
 }
 button {
   padding: 12px 20px;
+  margin: 5px;
   border-radius: 10px;
   border: none;
   background: #ffd700;
   color: #000;
   font-weight: bold;
-  font-size: 16px;
   cursor: pointer;
-  transition: 0.2s;
 }
-button:hover { background: #ffea66; }
-#errorMsg {
-  margin-top: 10px;
-  font-weight: bold;
-}
-.error { color: #ff6666; }
-.success { color: #66ff66; }
+.error { color: #ff4040; margin-top: 10px; }
+.success { color: #66ff66; margin-top: 10px; }
 </style>
 </head>
 <body>
 <div class="gate">
-  <h1>Enter Your Unique Access Code</h1>
-  <p>Input your code to continue</p>
+  <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 10px;">Enter Access Code</h1>
   <input type="text" id="codeInput" placeholder="Enter your code">
-  <br>
   <button onclick="validateCode()">Enter</button>
-  <p id="errorMsg"></p>
+  <p id="msg"></p>
 </div>
 
 <script>
-// URL JSON publik dari GitHub Pages
-const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
-let codes = [];
+// ================================
+// CONFIG
+// ================================
+const rawURL = "https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json";
+const redirectURL = "https://is.gd/plinko88";
 
-// Fetch JSON terbaru
+// ================================
+// LOCAL CACHE
+// ================================
+function getUsedCodes() {
+  const stored = localStorage.getItem('usedCodes') || "[]";
+  return JSON.parse(stored);
+}
+
+function addUsedCode(code) {
+  const usedCodes = getUsedCodes();
+  if(!usedCodes.includes(code)) {
+    usedCodes.push(code);
+    localStorage.setItem('usedCodes', JSON.stringify(usedCodes));
+  }
+}
+
+// ================================
+// FETCH CODES
+// ================================
 async function loadCodes() {
-  try {
-    const res = await fetch(codesUrl + '?ts=' + Date.now());
-    if (!res.ok) throw new Error('Network response not ok: ' + res.status);
-    codes = await res.json();
-    console.log('Codes loaded:', codes);
-  } catch(e) {
-    console.error('Failed to load codes:', e);
-    const msg = document.getElementById('errorMsg');
-    msg.textContent = 'Failed to load codes: ' + e.message;
-    msg.className = 'error';
-  }
+  const res = await fetch(rawURL + "?t=" + Date.now());
+  if(!res.ok) throw new Error("Failed to load JSON");
+  return await res.json();
 }
 
-// Validasi kode
+// ================================
+// VALIDATE CODE
+// ================================
 async function validateCode() {
-  await loadCodes(); // load JSON terbaru
-  const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
-  const msg = document.getElementById('errorMsg');
-  msg.textContent = '';
-  msg.className = '';
+  const msg = document.getElementById("msg");
+  msg.textContent = "";
 
-  if (!codeInput) {
-    msg.textContent = 'Code cannot be empty';
-    msg.className = 'error';
+  const code = document.getElementById("codeInput").value.trim().toUpperCase();
+  if(!code) {
+    msg.textContent = "Code cannot be empty";
+    msg.className = "error";
     return;
   }
 
-  const found = codes.find(c => c.code === codeInput);
-  if (!found) {
-    msg.textContent = 'Code not found';
-    msg.className = 'error';
-    return;
+  try {
+    const codes = await loadCodes();
+    const entry = codes.find(c => c.code === code);
+    const usedCodes = getUsedCodes();
+
+    if(!entry) {
+      msg.textContent = "Code not found";
+      msg.className = "error";
+      return;
+    }
+
+    if(entry.used || usedCodes.includes(code)) {
+      msg.textContent = "Code already used";
+      msg.className = "error";
+      return;
+    }
+
+    // Tandai di localStorage
+    addUsedCode(code);
+
+    // SUCCESS → redirect
+    msg.textContent = "Access Granted! Redirecting...";
+    msg.className = "success";
+    setTimeout(()=>{ window.location.href = redirectURL; }, 800);
+
+  } catch(e) {
+    msg.textContent = "Connection error";
+    msg.className = "error";
   }
-
-  if (found.used) {
-    msg.textContent = 'Code already used';
-    msg.className = 'error';
-    return;
-  }
-
-  // Tandai used (hanya lokal, Admin Generator nanti update ke GitHub)
-  found.used = true;
-
-  msg.textContent = '✅ Code valid! Redirecting...';
-  msg.className = 'success';
-
-  // Redirect langsung ke game
-  setTimeout(() => {
-    window.location.href = 'https://is.gd/plinko88';
-  }, 800);
 }
-
-// Load JSON saat halaman dibuka
-loadCodes();
 </script>
 </body>
 </html>
