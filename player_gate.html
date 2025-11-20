@@ -87,9 +87,7 @@ async function validateCode() {
       return;
     }
 
-    // ❌ Jangan tandai used di sini, hanya cek validitas
-    // nanti status used baru berubah saat player selesai bermain
-
+    // ✅ Hanya cek validitas, tidak menyimpan status di browser
     msg.textContent = 'Access Granted. Redirecting...';
     msg.className = 'success';
     setTimeout(() => {
