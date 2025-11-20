@@ -5,48 +5,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Player Gate – Gold Black</title>
 <style>
-body { font-family: Arial,sans-serif; background:#000; color:#ffd700; text-align:center; padding:60px 30px; }
-.gate { max-width:450px; margin:auto; padding:30px; border-radius:20px; background:linear-gradient(145deg,#1a1a1a,#000); border:2px solid #ffd700; box-shadow:0 0 25px #ffcc00; }
-input { width:80%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ffd700; background:#0d0d0d; color:#ffd700; font-size:16px; }
-button { padding:12px 20px; margin:5px; border-radius:10px; border:none; background:#ffd700; color:#000; font-weight:bold; cursor:pointer; }
-button:hover{ background:#ffea66; }
-.error{ color:#ff4040; margin-top:10px; }
-.success{ color:#66ff66; margin-top:10px; }
+body {
+  font-family: Arial, sans-serif;
+  background: #000;
+  color: #ffd700;
+  text-align: center;
+  padding: 60px 30px;
+}
+.gate {
+  max-width: 450px;
+  margin: auto;
+  padding: 30px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #1a1a1a, #000);
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 25px #ffcc00;
+}
+input {
+  width: 80%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  border: 1px solid #ffd700;
+  background: #0d0d0d;
+  color: #ffd700;
+  font-size: 16px;
+}
+button {
+  padding: 12px 20px;
+  margin: 5px;
+  border-radius: 10px;
+  border: none;
+  background: #ffd700;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:hover { background: #ffea66; }
+.error { color: #ff4040; margin-top: 10px; }
+.success { color: #66ff66; margin-top: 10px; }
 </style>
 </head>
 <body>
 <div class="gate">
-  <h1>Enter Access Code</h1>
+  <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 10px;">Enter Access Code</h1>
   <input type="text" id="codeInput" placeholder="Enter your code">
   <button onclick="validateCode()">Enter</button>
   <p id="msg"></p>
 </div>
 
 <script>
+// CONFIG
 const codesUrl = 'https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json';
 const redirectURL = 'https://is.gd/plinko88';
+
 let codes = [];
 
-// load JSON
+// FETCH CODES
 fetch(codesUrl)
   .then(res => res.json())
   .then(data => codes = data)
-  .catch(()=> console.log('Failed to load codes'));
+  .catch(() => console.log('Failed to load codes'));
 
-function validateCode(){
+function validateCode() {
   const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
   const msg = document.getElementById('msg');
   msg.textContent = '';
 
-  if(!codeInput){ msg.textContent='Code cannot be empty'; msg.className='error'; return; }
+  if (!codeInput) {
+    msg.textContent = 'Code cannot be empty';
+    msg.className = 'error';
+    return;
+  }
 
-  const found = codes.find(c=>c.code===codeInput);
-  if(!found){ msg.textContent='Code not found'; msg.className='error'; return; }
+  const found = codes.find(c => c.code === codeInput);
+  if (!found) {
+    msg.textContent = 'Code not found';
+    msg.className = 'error';
+    return;
+  }
 
-  // Valid → redirect
-  msg.textContent='✅ Code valid! Redirecting...';
-  msg.className='success';
-  setTimeout(()=>{ window.location.href=redirectURL; }, 800);
+  // Kode valid → redirect
+  msg.textContent = '✅ Code valid! Redirecting...';
+  msg.className = 'success';
+  setTimeout(() => {
+    window.location.href = redirectURL;
+  }, 800);
 }
 </script>
 </body>
