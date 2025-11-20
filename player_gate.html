@@ -1,119 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Player Gate – Gold Black</title>
 <style>
-  :root{--gold:#ffd700;--bg:#000;--panel:#1a1a1a;--muted:#c9a93d;}
-  body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--gold);text-align:center;padding:60px 20px;}
-  .gate{max-width:440px;margin:auto;padding:28px;border-radius:18px;background:linear-gradient(145deg,var(--panel),#000);border:2px solid var(--gold);box-shadow:0 0 25px #ffcc00;}
-  h1{font-size:24px;margin:0 0 8px;font-weight:700;text-shadow:0 0 12px rgba(255,215,0,0.15)}
-  p.lead{margin:0 0 18px;color:var(--muted)}
-  input[type="text"]{width:82%;padding:12px;border-radius:10px;border:1px solid var(--gold);background:#0d0d0d;color:var(--gold);font-size:16px}
-  button{padding:12px 20px;border-radius:10px;border:none;background:var(--gold);color:#000;font-weight:700;cursor:pointer;margin-top:12px}
-  button:hover{background:#ffea66}
-  .msg{margin-top:14px;font-weight:600}
-  .error{color:#ff6b6b}
-  .success{color:#8ef08e}
-  small.note{display:block;margin-top:10px;color:var(--muted);font-size:13px}
+body { font-family: Arial,sans-serif; background:#000; color:#ffd700; text-align:center; padding:60px 30px; }
+.gate { max-width:450px; margin:auto; padding:30px; border-radius:20px; background:linear-gradient(145deg,#1a1a1a,#000); border:2px solid #ffd700; box-shadow:0 0 25px #ffcc00; }
+input { width:80%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ffd700; background:#0d0d0d; color:#ffd700; font-size:16px; }
+button { padding:12px 20px; margin:5px; border-radius:10px; border:none; background:#ffd700; color:#000; font-weight:bold; cursor:pointer; }
+button:hover{ background:#ffea66; }
+.error{ color:#ff4040; margin-top:10px; }
+.success{ color:#66ff66; margin-top:10px; }
 </style>
 </head>
 <body>
-  <div class="gate" role="main" aria-labelledby="title">
-    <h1 id="title">Enter Your Unique Access Code</h1>
-    <p class="lead">Input your code to continue</p>
-
-    <input id="codeInput" type="text" inputmode="text" autocomplete="off" placeholder="Enter your code (e.g. MOHXYUGU)">
-    <br>
-    <button id="enterBtn">Enter</button>
-
-    <div id="msg" class="msg" aria-live="polite"></div>
-    <small class="note">Codes are read-only from GitHub; if a code should be marked used, admin will sync them.</small>
-  </div>
+<div class="gate">
+  <h1>Enter Access Code</h1>
+  <input type="text" id="codeInput" placeholder="Enter your code">
+  <button onclick="validateCode()">Enter</button>
+  <p id="msg"></p>
+</div>
 
 <script>
-/*
-  Player Gate compatible with JSON array:
-  [
-    {"code":"MOHXYUGU","used":false},
-    {"code":"SC3MX4NP","used":false}
-  ]
+const codesUrl = 'https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json';
+const redirectURL = 'https://is.gd/plinko88';
+let codes = [];
 
-  Replace GAME_LINK with your actual direct game link if needed.
-*/
-const RAW_URL = "https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json";
-const GAME_LINK = "https://is.gd/plinko88"; // <-- ganti jika perlu
+// load JSON
+fetch(codesUrl)
+  .then(res => res.json())
+  .then(data => codes = data)
+  .catch(()=> console.log('Failed to load codes'));
 
-const input = document.getElementById('codeInput');
-const btn = document.getElementById('enterBtn');
-const msg = document.getElementById('msg');
+function validateCode(){
+  const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
+  const msg = document.getElementById('msg');
+  msg.textContent = '';
 
-async function fetchCodes() {
-  try {
-    const res = await fetch(RAW_URL + '?t=' + Date.now());
-    if (!res.ok) throw new Error('Load failed (' + res.status + ')');
-    const json = await res.json();
-    if (!Array.isArray(json)) throw new Error('Unexpected JSON format (expected array)');
-    return json;
-  } catch (e) {
-    throw e;
-  }
+  if(!codeInput){ msg.textContent='Code cannot be empty'; msg.className='error'; return; }
+
+  const found = codes.find(c=>c.code===codeInput);
+  if(!found){ msg.textContent='Code not found'; msg.className='error'; return; }
+
+  // Valid → redirect
+  msg.textContent='✅ Code valid! Redirecting...';
+  msg.className='success';
+  setTimeout(()=>{ window.location.href=redirectURL; }, 800);
 }
-
-function showError(text){
-  msg.textContent = text;
-  msg.className = 'msg error';
-}
-function showSuccess(text){
-  msg.textContent = text;
-  msg.className = 'msg success';
-}
-
-async function validateAndRedirect(){
-  showError('Checking...');
-  const codeRaw = (input.value || '').trim();
-  if (!codeRaw) { showError('Code cannot be empty'); return; }
-  const code = codeRaw.toUpperCase();
-
-  try {
-    const list = await fetchCodes();
-    // find ignoring case and only unused
-    const found = list.find(item => {
-      if (!item || typeof item.code !== 'string') return false;
-      return item.code.toUpperCase() === code && item.used === false;
-    });
-
-    if (!found) {
-      // Provide helpful message if code exists but used
-      const exists = list.find(item => item && typeof item.code === 'string' && item.code.toUpperCase() === code);
-      if (exists) {
-        showError('Code already used');
-      } else {
-        showError('Code not found');
-      }
-      return;
-    }
-
-    // success -> redirect
-    showSuccess('✔️ Code valid — Redirecting...');
-    setTimeout(() => { window.location.href = GAME_LINK; }, 700);
-
-  } catch (err) {
-    showError('Failed to load codes: ' + err.message);
-    console.error('Player Gate error:', err);
-  }
-}
-
-// enter on click or Enter key
-btn.addEventListener('click', validateAndRedirect);
-input.addEventListener('keydown', e => { if (e.key === 'Enter') validateAndRedirect(); });
-
-// optional: pre-fill code from ?code=XXXX in URL
-(function prefillFromQuery(){
-  const p = new URLSearchParams(location.search).get('code');
-  if (p) { input.value = p; }
-})();
 </script>
 </body>
 </html>
