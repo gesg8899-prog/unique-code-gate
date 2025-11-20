@@ -3,70 +3,165 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Direct Access</title>
+<title>Galactic Plinko</title>
 <style>
-body { font-family: Arial, sans-serif; background: #000; color: #ffd700; text-align: center; padding: 60px 30px; }
-.gate { max-width: 450px; margin: auto; padding: 30px; border-radius: 20px; background: linear-gradient(145deg,#1a1a1a,#000); border: 2px solid #ffd700; box-shadow: 0 0 25px #ffcc00; }
-input { width: 80%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #ffd700; background: #0d0d0d; color: #ffd700; font-size: 16px; }
-button { padding: 12px 20px; border-radius: 10px; border: none; background: #ffd700; color: #000; font-weight: bold; cursor: pointer; }
-button:hover { background: #ffea66; }
-#errorMsg { margin-top: 10px; font-weight: bold; }
-.error { color: #ff6666; }
-.success { color: #66ff66; }
+body{margin:0;background:#010114;display:flex;justify-content:center;align-items:center;height:100vh;font-family:Arial;color:#fff;position:relative;}
+.wrap{width:360px;padding:12px;position:relative;}
+canvas{width:100%;height:auto;border-radius:14px;display:block;box-shadow:0 12px 30px rgba(0,0,0,.6);}
+header{text-align:center;color:#ff77ff;margin-bottom:8px;font-size:20px;text-shadow:0 0 10px #ff77ff,0 0 20px #ff44ff;}
+#pointsGrid{display:flex;justify-content:space-around;margin:12px 0 4px 0;}
+.pointBox{width:48px;height:48px;background:rgba(255,255,255,0.05);border:2px solid #0ff;border-radius:8px;display:flex;justify-content:center;align-items:center;font-weight:bold;font-size:16px;color:#0ff;}
+#pointsBar{margin:6px 0;background:rgba(0,0,0,0.3);border-radius:8px;height:24px;width:100%;display:flex;overflow:hidden;position:relative;}
+#pointsFill{height:100%;width:0%;transition:width 0.4s ease;border-radius:6px;box-shadow:0 0 10px #fff inset;}
+#pointsText{position:absolute;left:50%;top:0;transform:translateX(-50%);color:#fff;font-weight:700;text-shadow:0 0 6px #fff;}
+#results{margin-top:8px;padding:8px;border-radius:8px;text-align:center;font-size:16px;color:#0ff;text-shadow:0 0 10px #0ff,0 0 20px #0ff;background:rgba(0,0,0,0.2);}
+#targets{margin-top:4px;padding:4px;border-radius:8px;text-align:center;font-size:14px;color:#ff9;text-shadow:0 0 6px #ff9,0 0 12px #ff9;}
+.floatingPoint{position:absolute;font-weight:bold;font-size:20px;color:#ff0;text-shadow:0 0 8px #ff0,0 0 16px #fff;pointer-events:none;animation:floatUp 1s ease-out forwards;}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-50px);} }
+#winPopup,#losePopup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;justify-content:center;align-items:center;z-index:10;display:none;flex-direction:column;}
+#winPopup.active,#losePopup.active{display:flex;}
+.popupContent{background:linear-gradient(180deg,#0ff,#44f);padding:20px 28px;border-radius:14px;text-align:center;box-shadow:0 8px 20px rgba(0,0,0,0.7);}
+.popupContent h2{color:#ff0;margin-bottom:12px;text-shadow:0 0 10px #ff0,0 0 20px #fff;}
+.popupContent p{color:#fff;margin-bottom:12px;}
+.popupContent button{margin-top:12px;background:linear-gradient(90deg,#ff9f1c,#ffbf69);color:#022;cursor:pointer;padding:8px 16px;border-radius:8px;border:none;font-weight:700;}
+.popupContent img{width:120px;margin-bottom:12px;}
+.hint{font-size:14px;color:#ff77ff;text-shadow:0 0 6px #ff77ff;}
+#musicToggle{position:absolute;top:12px;right:12px;padding:8px 12px;background:#ff0;color:#022;border:none;border-radius:8px;font-weight:bold;cursor:pointer;z-index:20;}
 </style>
 </head>
 <body>
-<div class="gate">
-  <h1>Enter Your Access Code</h1>
-  <input type="text" id="codeInput" placeholder="Enter your code">
-  <br>
-  <button onclick="validateCode()">Enter</button>
-  <p id="errorMsg"></p>
+<div class="wrap">
+<header>
+<h2>Galactic Plinko</h2>
+<div class="hint">Click top area to drop a Ball. Maximum 50 Balls.</div>
+</header>
+
+<canvas id="c" width="360" height="640"></canvas>
+
+<div id="pointsGrid"></div>
+<div id="pointsBar"><div id="pointsFill"></div><div id="pointsText">0%</div></div>
+<div id="results">Total Points: 0 | Balls Left: 50</div>
+<div id="targets">Target $3: 58 points | Target $6: 63 points</div>
+</div>
+
+<!-- Music toggle button -->
+<button id="musicToggle">Mute</button>
+
+<!-- Background Music -->
+<audio id="bgMusic" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay loop></audio>
+
+<!-- Win Popup -->
+<div id="winPopup">
+<div class="popupContent">
+<h2 id="winTitle">🎉 CONGRATULATIONS! 🎉</h2>
+<p id="winText">Take a screenshot and claim your reward!</p>
+<a href="https://t.me/GE88SG_Wallet" target="_blank"><button>Claim Reward</button></a>
+</div>
+</div>
+
+<!-- Lose Popup -->
+<div id="losePopup">
+<div class="popupContent">
+<img src="https://static.gwvkyk.com/media/b088eca90b196584efa29.png" alt="Try Again"/>
+<h2>TRY AGAIN!</h2>
+<p>You didn’t reach minimum points. Better luck next time!</p>
+<button id="loseCloseBtn">Close</button>
+</div>
 </div>
 
 <script>
-const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
-const redirectURL = 'https://gesg8899-prog.github.io/plinkoGE88/';
+const canvas=document.getElementById('c'),ctx=canvas.getContext('2d');
+const W=canvas.width,H=canvas.height;
+const pointsFill=document.getElementById('pointsFill'),pointsText=document.getElementById('pointsText');
+const resultsEl=document.getElementById('results'),pointsGrid=document.getElementById('pointsGrid');
+const winPopup=document.getElementById('winPopup'),losePopup=document.getElementById('losePopup');
+const winTitle=document.getElementById('winTitle'),winText=document.getElementById('winText');
 
-async function validateCode() {
-  const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
-  const msg = document.getElementById('errorMsg');
-  msg.textContent = '';
-  msg.className = '';
+let coins=[],planets=[],astronauts=[];
+let ballsLeft=50,points=0;
+let gameOver=false; // NEW: tanda game sudah selesai
 
-  if(!codeInput) {
-    msg.textContent = 'Code cannot be empty';
-    msg.className = 'error';
-    return;
+const ROWS=6,COLS=6,GRAVITY=0.28,BOUNCE=0.88,COIN_RADIUS=6,PLANET_RADIUS=18;
+const planetPNGUrls=[
+'https://static.gwvkyk.com/media/12dc37efda1968e838ea3.png',
+'https://static.gwvkyk.com/media/7b885200ea196d8678586.png',
+'https://static.gwvkyk.com/media/c7933a00ea1965020c2e2.png'
+];
+const planetImages=planetPNGUrls.map(url=>{const img=new Image();img.src=url;return img;});
+const astronautImg=new Image(); astronautImg.src='https://static.gwvkyk.com/media/ef7e4c21da196c3db7efa.png';
+const slotPoints=[0.5,0.5,0.5,0.5,0.5,0.5,1,1,1,2,2,3];
+
+function shuffle(array){for(let i=array.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[array[i],array[j]]=[array[j],array[i]];}return array;}
+
+function generateAstronauts(){astronauts=[];for(let i=0;i<20;i++){astronauts.push({x:50+Math.random()*(W-100),y:200+Math.random()*200,floatPhase:Math.random()*Math.PI*2,scale:0.02+Math.random()*0.02});}}
+function generatePlanets(){planets=[];const leftPadding=30;const gapX=(W-leftPadding*2)/(COLS-1);for(let r=0;r<ROWS;r++){for(let c=0;c<COLS;c++){const x=leftPadding + c*gapX + (r%2? gapX/2:0);const y=120 + r*70;const img=planetImages[Math.floor(Math.random()*planetImages.length)];planets.push({x,y,r:PLANET_RADIUS,img,lightPhase:Math.random()*Math.PI*2});}}}
+
+function initGame(){coins=[]; points=0; ballsLeft=50; gameOver=false; generateAstronauts(); generatePlanets(); setupPointsGrid(); updateResultsText();}
+
+function setupPointsGrid(){pointsGrid.innerHTML='';let shuffledPoints=shuffle([...slotPoints]);shuffledPoints.forEach(p=>{const box=document.createElement('div');box.className='pointBox';box.textContent=p;pointsGrid.appendChild(box);});}
+
+canvas.addEventListener('pointerdown',ev=>{
+  if(ballsLeft<=0 || gameOver) return; // blok input jika game selesai
+  const rect=canvas.getBoundingClientRect();
+  const px=(ev.clientX-rect.left)*(canvas.width/rect.width);
+  coins.push({x:Math.max(COIN_RADIUS,Math.min(W-COIN_RADIUS,px)),y:36,vx:(Math.random()-0.5)*0.6,vy:0,r:COIN_RADIUS,trail:[],collected:false,finished:false});
+  ballsLeft--; updateResultsText();
+});
+
+function reflect(vx,vy,nx,ny,damp=BOUNCE){const dot=vx*nx+vy*ny;return {vx:(vx-2*dot*nx)*damp,vy:(vy-2*dot*ny)*damp};}
+function createFloatingPoint(x,y,value){const span=document.createElement('div');span.className='floatingPoint';span.textContent='+'+value;span.style.left=x+'px';span.style.top=y+'px';document.querySelector('.wrap').appendChild(span);setTimeout(()=>span.remove(),1000);}
+
+function update(){
+  astronauts.forEach(a=>{a.x+=Math.sin(Date.now()/1500+a.floatPhase)*0.2;a.y+=Math.sin(Date.now()/2000+a.floatPhase)*0.1;});
+  for(let i=coins.length-1;i>=0;i--){
+    const c=coins[i]; c.vy+=GRAVITY;c.x+=c.vx;c.y+=c.vy;c.trail.push({x:c.x,y:c.y}); if(c.trail.length>10)c.trail.shift();
+    if(c.x-c.r<0){c.x=c.r;c.vx*=-1;}
+    if(c.x+c.r>W){c.x=W-c.r;c.vx*=-1;}
+    planets.forEach(p=>{const dx=c.x-p.x,dy=c.y-p.y,dist=Math.hypot(dx,dy),minD=c.r+p.r;if(dist<minD && dist>0.0001){const nx=dx/dist,ny=dy/dist,overlap=minD-dist;c.x+=nx*(overlap+0.2);c.y+=ny*(overlap+0.2);const nv=reflect(c.vx,c.vy,nx,ny);c.vx=nv.vx+(Math.random()-0.5)*0.05;c.vy=nv.vy-0.1;}});
+
+    if(c.y>H-40 && !c.collected){
+      const randIndex=Math.floor(Math.random()*slotPoints.length);
+      const pointVal=slotPoints[randIndex]; points+=pointVal;c.collected=true;createFloatingPoint(c.x-12,H-50,pointVal);updateResultsText();
+    }
+    if(c.y>H+50){c.finished=true;coins.splice(i,1);}
   }
 
-  try {
-    // Tambahkan timestamp untuk menghindari cache
-    const res = await fetch(codesUrl + '?ts=' + Date.now());
-    if(!res.ok) throw new Error('Failed to fetch codes');
-
-    const codes = await res.json();
-    const found = codes.find(c => c.code === codeInput);
-
-    if(!found) {
-      msg.textContent = 'Code not found';
-      msg.className = 'error';
-      return;
+  if(coins.every(c=>c.finished) && ballsLeft===0 && !gameOver){
+    if(points >= 63){
+        winTitle.textContent="🎉 YOU WIN $18! 🎉";
+        winText.textContent="Take a screenshot and claim your $18 reward!";
+        winPopup.classList.add('active');
     }
-
-    // ✅ Bersih: langsung redirect, tanpa menyimpan apa pun di browser
-    msg.textContent = 'Access Granted. Redirecting...';
-    msg.className = 'success';
-    setTimeout(() => {
-      window.location.href = redirectURL;
-    }, 500);
-
-  } catch(e) {
-    console.error(e);
-    msg.textContent = 'Connection error';
-    msg.className = 'error';
+    else if(points >= 58){
+        winTitle.textContent="🎉 YOU WIN $3! 🎉";
+        winText.textContent="Take a screenshot and claim your $3 reward!";
+        winPopup.classList.add('active');
+    }
+    else {
+        losePopup.classList.add('active');
+    }
+    gameOver = true; // game selesai permanent
   }
 }
+
+function drawBackground(){ctx.fillStyle='#010114';ctx.fillRect(0,0,W,H);for(let s=0;s<60;s++){ctx.fillStyle=`rgba(255,255,255,${Math.random()*0.3})`;ctx.fillRect(Math.random()*W,Math.random()*H,2,2);}}
+function drawPlanets(){planets.forEach(p=>{if(p.img.complete){const glow=Math.sin(Date.now()/300+p.lightPhase)*0.5+0.5;ctx.save();ctx.shadowColor='rgba(0,255,255,'+glow+')';ctx.shadowBlur=12;ctx.drawImage(p.img,p.x-PLANET_RADIUS,p.y-PLANET_RADIUS,PLANET_RADIUS*2,PLANET_RADIUS*2);ctx.restore();}});}
+function drawCoins(){coins.forEach(c=>{for(let t=0;t<c.trail.length;t++){const pt=c.trail[t];ctx.fillStyle=`rgba(0,200,255,${(t+1)/c.trail.length*0.35})`;ctx.beginPath();ctx.arc(pt.x,pt.y,c.r*(0.35+t*0.02),0,Math.PI*2);ctx.fill();}ctx.beginPath();ctx.arc(c.x,c.y,c.r,0,Math.PI*2);ctx.fillStyle='#0ff';ctx.fill();});}
+function drawAstronauts(){astronauts.forEach(a=>{if(astronautImg.complete){ctx.save();ctx.translate(a.x,a.y);ctx.drawImage(astronautImg,-astronautImg.width/2*a.scale,-astronautImg.height/2*a.scale,astronautImg.width*a.scale,astronautImg.height*a.scale);ctx.restore();}});}
+function draw(){drawBackground();drawAstronauts();drawPlanets();drawCoins();}
+function updateResultsText(){resultsEl.innerHTML=`<span style="color:#ff00ff;text-shadow:0 0 6px #ff00ff,0 0 12px #ff00ff;">Total Points: ${points.toFixed(1)}</span> | <span style="color:#00ffff;text-shadow:0 0 6px #00ffff,0 0 12px #00ffff;">Balls Left: ${ballsLeft}</span>`; const perc=Math.min(points/50,1); let color;if(perc<0.25)color='red';else if(perc<0.5)color='yellow';else if(perc<0.75)color='lime';else color='purple';pointsFill.style.background=color;pointsFill.style.width=(perc*100)+'%';pointsFill.style.boxShadow=`0 0 8px ${color},0 0 12px ${color},0 0 20px ${color} inset`;pointsText.textContent=Math.round(perc*100)+'%';}
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+initGame();
+loop();
+
+// Music toggle
+const bgMusic=document.getElementById('bgMusic');
+const musicToggle=document.getElementById('musicToggle');
+musicToggle.addEventListener('click',()=>{
+    if(bgMusic.paused){bgMusic.play(); musicToggle.textContent='Mute';}
+    else{bgMusic.pause(); musicToggle.textContent='Unmute';}
+});
 </script>
 </body>
 </html>
