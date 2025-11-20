@@ -59,7 +59,7 @@ button:hover { background: #ffea66; }
 </div>
 
 <script>
-// URL JSON dari GitHub Pages (pastikan ini JSON terbaru)
+// URL JSON publik dari GitHub Pages
 const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
 const redirectURL = 'https://is.gd/plinko88';
 
@@ -76,20 +76,20 @@ async function validateCode() {
   }
 
   try {
+    // Tambahkan timestamp agar tidak cache
     const res = await fetch(codesUrl + '?ts=' + Date.now());
     if(!res.ok) throw new Error('Failed to fetch codes');
 
     const codes = await res.json();
-
-    // Hanya cek apakah kode ada di JSON
     const found = codes.find(c => c.code === codeInput);
+
     if(!found) {
       msg.textContent = 'Code not found';
       msg.className = 'error';
       return;
     }
 
-    // ✅ Langsung redirect, tidak ada status used, tidak ada browser storage
+    // ✅ Bersih: langsung redirect, tidak ada storage atau status used
     msg.textContent = 'Access Granted. Redirecting...';
     msg.className = 'success';
     setTimeout(() => {
