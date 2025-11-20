@@ -87,7 +87,7 @@ async function validateCode() {
       return;
     }
 
-    // ✅ Hanya cek validitas, tidak menyimpan status di browser
+    // ✅ Clean Gate: hanya cek validitas, tidak menyimpan apapun di browser
     msg.textContent = 'Access Granted. Redirecting...';
     msg.className = 'success';
     setTimeout(() => {
