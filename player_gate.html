@@ -25,13 +25,14 @@ button { padding:12px 20px; margin:5px; border-radius:10px; border:none; backgro
 const rawURL = "https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json";
 const redirectURL = "https://is.gd/plinko88";
 
-// Load codes (read-only)
+// Load codes
 async function loadCodes() {
   const res = await fetch(rawURL + "?t=" + Date.now());
   if (!res.ok) throw new Error("Failed to load JSON");
   return await res.json();
 }
 
+// Validate code (read-only)
 async function validateCode() {
   const msg = document.getElementById("msg");
   msg.textContent = "";
@@ -42,12 +43,11 @@ async function validateCode() {
   try {
     let codes = await loadCodes();
     let entry = codes.find(c=>c.code===code);
+
     if (!entry) { msg.textContent="Code not found"; msg.className="error"; return; }
     if (entry.used) { msg.textContent="Code already used"; msg.className="error"; return; }
 
-    // SUCCESS -> redirect
-    msg.textContent="Access Granted! Redirecting...";
-    msg.className="success";
+    msg.textContent="Access Granted! Redirecting..."; msg.className="success";
     setTimeout(()=>{ window.location.href=redirectURL; },800);
 
   } catch(e) { msg.textContent="Connection error"; msg.className="error"; }
