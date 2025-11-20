@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Auto Sync</title>
+<title>Player Gate – Gold Black</title>
 <style>
 body {
   font-family: Arial, sans-serif;
-  background: #000000;
+  background: #000;
   color: #ffd700;
   text-align: center;
   padding: 60px 30px;
@@ -33,132 +33,65 @@ input {
 }
 button {
   padding: 12px 20px;
+  margin: 5px;
   border-radius: 10px;
   border: none;
   background: #ffd700;
   color: #000;
   font-weight: bold;
-  font-size: 16px;
   cursor: pointer;
 }
-#errorMsg {
-  margin-top: 10px;
-  font-weight: bold;
-}
-.error { color: #ff4040; }
-.success { color: #66ff66; }
+button:hover { background: #ffea66; }
+.error { color: #ff4040; margin-top: 10px; }
+.success { color: #66ff66; margin-top: 10px; }
 </style>
 </head>
 <body>
-
 <div class="gate">
   <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 10px;">Enter Access Code</h1>
   <input type="text" id="codeInput" placeholder="Enter your code">
   <button onclick="validateCode()">Enter</button>
-  <p id="errorMsg"></p>
+  <p id="msg"></p>
 </div>
 
 <script>
-// ========================
 // CONFIG
-// ========================
-const rawURL = "https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json";
-const githubAPI = "https://api.github.com/repos/gesg8899-prog/unique-code-gate/contents/player_codes.json";
-const redirectURL = "https://is.gd/plinko88";
+const codesUrl = 'https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json';
+const redirectURL = 'https://is.gd/plinko88';
 
-// !!! AMAN: Gunakan token khusus yang hanya punya repo ini
-const token = "GITHUB_PERSONAL_ACCESS_TOKEN"; // ganti dengan token admin
+let codes = [];
 
-// ========================
-// LOAD LATEST CODES
-// ========================
-async function loadCodes() {
-  const res = await fetch(rawURL + "?ts=" + Date.now());
-  return await res.json();
-}
+// FETCH CODES
+fetch(codesUrl)
+  .then(res => res.json())
+  .then(data => codes = data)
+  .catch(() => console.log('Failed to load codes'));
 
-// ========================
-// SAVE UPDATED CODES KE GITHUB
-// ========================
-async function saveToGitHub(codes) {
-  // Ambil SHA terbaru
-  const fileRes = await fetch(githubAPI, {
-    headers: { "Authorization": `Bearer ${token}` }
-  });
-  const fileData = await fileRes.json();
-  const newContent = btoa(JSON.stringify(codes, null, 2));
-
-  const uploadRes = await fetch(githubAPI, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      message: "Mark code as used via Player Gate",
-      content: newContent,
-      sha: fileData.sha
-    })
-  });
-
-  return uploadRes.ok;
-}
-
-// ========================
-// VALIDATE CODE
-// ========================
-async function validateCode() {
-  const msg = document.getElementById("errorMsg");
+function validateCode() {
+  const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
+  const msg = document.getElementById('msg');
   msg.textContent = '';
-  msg.className = '';
 
-  const codeInput = document.getElementById("codeInput").value.trim().toUpperCase();
-  if(!codeInput){
-    msg.textContent = "Code cannot be empty";
-    msg.className = "error";
+  if (!codeInput) {
+    msg.textContent = 'Code cannot be empty';
+    msg.className = 'error';
     return;
   }
 
-  try {
-    let codes = await loadCodes();
-    let entry = codes.find(c => c.code === codeInput);
-
-    if(!entry){
-      msg.textContent = "Code not found";
-      msg.className = "error";
-      return;
-    }
-
-    if(entry.used){
-      msg.textContent = "Code already used";
-      msg.className = "error";
-      return;
-    }
-
-    // Tandai used
-    entry.used = true;
-    msg.textContent = "✅ Code valid! Updating server...";
-    msg.className = "success";
-
-    const ok = await saveToGitHub(codes);
-
-    if(!ok){
-      msg.textContent = "Failed to update server";
-      msg.className = "error";
-      return;
-    }
-
-    msg.textContent = "Access Granted. Redirecting...";
-    msg.className = "success";
-    setTimeout(() => window.location.href = redirectURL, 800);
-
-  } catch(e) {
-    console.error(e);
-    msg.textContent = "Connection error";
-    msg.className = "error";
+  const found = codes.find(c => c.code === codeInput);
+  if (!found) {
+    msg.textContent = 'Code not found';
+    msg.className = 'error';
+    return;
   }
+
+  // Kode valid → redirect
+  msg.textContent = '✅ Code valid! Redirecting...';
+  msg.className = 'success';
+  setTimeout(() => {
+    window.location.href = redirectURL;
+  }, 800);
 }
 </script>
-
 </body>
 </html>
