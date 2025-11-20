@@ -5,14 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Player Gate – Direct Access</title>
 <style>
-body { font-family: Arial,sans-serif; background:#000; color:#ffd700; text-align:center; padding:60px 30px; }
-.gate { max-width:420px; margin:auto; padding:30px; border-radius:20px; background:linear-gradient(145deg,#1a1a1a,#000); border:2px solid #ffd700; box-shadow:0 0 25px #ffcc00; }
-input { width:80%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ffd700; background:#0d0d0d; color:#ffd700; font-size:16px; }
-button { padding:12px 20px; border-radius:10px; border:none; background:#ffd700; color:#000; font-weight:bold; cursor:pointer; }
-button:hover { background:#ffea66; }
-#errorMsg { margin-top:10px; font-weight:bold; }
-.error { color:#ff6666; }
-.success { color:#66ff66; }
+body {
+  font-family: Arial, sans-serif;
+  background: #000;
+  color: #ffd700;
+  text-align: center;
+  padding: 60px 30px;
+}
+.gate {
+  max-width: 450px;
+  margin: auto;
+  padding: 30px;
+  border-radius: 20px;
+  background: linear-gradient(145deg,#1a1a1a,#000);
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 25px #ffcc00;
+}
+input {
+  width: 80%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  border: 1px solid #ffd700;
+  background: #0d0d0d;
+  color: #ffd700;
+  font-size: 16px;
+}
+button {
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: none;
+  background: #ffd700;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:hover { background: #ffea66; }
+#errorMsg {
+  margin-top: 10px;
+  font-weight: bold;
+}
+.error { color: #ff6666; }
+.success { color: #66ff66; }
 </style>
 </head>
 <body>
@@ -25,49 +59,52 @@ button:hover { background:#ffea66; }
 </div>
 
 <script>
+// URL JSON dari GitHub Pages
 const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
+const redirectURL = 'https://is.gd/plinko88';
 
-// Ambil JSON terbaru dari GitHub
-async function loadCodes() {
-  try {
-    const res = await fetch(codesUrl + '?ts=' + Date.now());
-    return await res.json();
-  } catch(e) {
-    console.error('Failed to load codes', e);
-    document.getElementById('errorMsg').textContent = 'Failed to load codes';
-    document.getElementById('errorMsg').className = 'error';
-    return [];
-  }
-}
-
-// Validasi kode
 async function validateCode() {
   const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
   const msg = document.getElementById('errorMsg');
   msg.textContent = '';
   msg.className = '';
 
-  if (!codeInput) {
+  if(!codeInput) {
     msg.textContent = 'Code cannot be empty';
     msg.className = 'error';
     return;
   }
 
-  const codes = await loadCodes();
-  const found = codes.find(c => c.code === codeInput);
+  try {
+    const res = await fetch(codesUrl + '?ts=' + Date.now());
+    if(!res.ok) throw new Error('Failed to fetch codes');
+    const codes = await res.json();
+    const found = codes.find(c => c.code === codeInput);
 
-  if (!found) {
-    msg.textContent = 'Code not found';
+    if(!found) {
+      msg.textContent = 'Code not found';
+      msg.className = 'error';
+      return;
+    }
+
+    if(found.used) {
+      msg.textContent = 'Code already used';
+      msg.className = 'error';
+      return;
+    }
+
+    // ✅ Code valid → langsung redirect
+    msg.textContent = 'Access Granted. Redirecting...';
+    msg.className = 'success';
+    setTimeout(() => {
+      window.location.href = redirectURL;
+    }, 600);
+
+  } catch(e) {
+    console.error(e);
+    msg.textContent = 'Connection error';
     msg.className = 'error';
-    return;
   }
-
-  // Langsung redirect jika kode valid
-  msg.textContent = '✅ Code valid! Redirecting...';
-  msg.className = 'success';
-  setTimeout(() => {
-    window.location.href = ' https://gesg8899-prog.github.io/plinkoGE88/'; // Ganti link target game sesuai kebutuhan
-  }, 500);
 }
 </script>
 </body>
