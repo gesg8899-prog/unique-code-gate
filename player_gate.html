@@ -28,7 +28,7 @@ button:hover { background:#ffea66; }
 const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
 let codes = [];
 
-// Load JSON dari GitHub Pages
+// Ambil JSON terbaru dari GitHub
 async function loadCodes() {
   try {
     const res = await fetch(codesUrl + '?ts=' + Date.now());
@@ -42,7 +42,7 @@ async function loadCodes() {
 
 // Validasi kode
 async function validateCode() {
-  await loadCodes(); // pastikan ambil JSON terbaru
+  await loadCodes();
   const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
   const msg = document.getElementById('errorMsg');
   msg.textContent = '';
@@ -67,20 +67,13 @@ async function validateCode() {
     return;
   }
 
-  // Tandai digunakan lokal saja
-  found.used = true;
-
+  // Langsung redirect tanpa simpan status di browser
   msg.textContent = '✅ Code valid! Redirecting...';
   msg.className = 'success';
-
-  // Redirect ke game
   setTimeout(() => {
     window.location.href = 'https://gesg8899-prog.github.io/plinkoGE88/';
-  }, 800);
+  }, 500);
 }
-
-// Load codes awal
-loadCodes();
 </script>
 </body>
 </html>
