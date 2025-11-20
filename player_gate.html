@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Direct Access</title>
+<title>Player Gate – Multi-Use Browser</title>
 <style>
 body { font-family: Arial, sans-serif; background:#000; color:#ffd700; text-align:center; padding:60px 30px; }
 .gate { max-width:450px; margin:auto; padding:30px; border-radius:20px; background:linear-gradient(145deg,#1a1a1a,#000); border:2px solid #ffd700; box-shadow:0 0 25px #ffcc00; }
@@ -53,13 +53,13 @@ async function validateCode() {
       return;
     }
 
-    if(found.used){
-      msg.textContent = 'Code already used';
-      msg.className = 'error';
-      return;
+    // ✅ Cek sessionStorage supaya kode di browser ini bisa dipakai berkali-kali
+    const usedInBrowser = sessionStorage.getItem(`code_${codeInput}`);
+    if(!usedInBrowser){
+      // Tandai dipakai di browser ini
+      sessionStorage.setItem(`code_${codeInput}`, 'true');
     }
 
-    // ✅ Code valid → langsung redirect
     msg.textContent = 'Access Granted. Redirecting...';
     msg.className = 'success';
     setTimeout(()=>window.location.href=redirectURL,600);
