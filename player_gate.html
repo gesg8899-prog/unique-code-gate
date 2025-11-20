@@ -3,64 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Interactive Access</title>
+<title>Player Gate – Gold Royale</title>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #000;
-  color: #ffd700;
-  text-align: center;
-  padding: 60px 30px;
-}
-.gate {
-  max-width: 450px;
-  margin: auto;
-  padding: 30px;
-  border-radius: 20px;
-  background: linear-gradient(145deg, #1a1a1a, #000);
-  border: 2px solid #ffd700;
-  box-shadow: 0 0 25px #ffcc00;
-}
-input {
-  width: 80%;
-  padding: 12px;
-  margin-bottom: 15px;
-  border-radius: 10px;
-  border: 1px solid #ffd700;
-  background: #0d0d0d;
-  color: #ffd700;
-  font-size: 16px;
-}
-button {
-  padding: 12px 20px;
-  border-radius: 10px;
-  border: none;
-  background: #ffd700;
-  color: #000;
-  font-weight: bold;
-  font-size: 16px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-button:hover { background: #ffea66; }
-#errorMsg { margin-top: 10px; font-weight: bold; }
-.error { color: #ff6666; }
-.success { color: #66ff66; }
-.loading {
-  color: #ffe680;
-  font-weight: bold;
-  animation: blink 1s infinite;
-}
-@keyframes blink {
-  0%, 50%, 100% { opacity: 1; }
-  25%, 75% { opacity: 0.3; }
-}
+body { font-family: Arial,sans-serif; background:#000; color:#ffd700; text-align:center; padding:60px 30px; }
+.gate { max-width:420px; margin:auto; padding:30px; border-radius:20px; background:linear-gradient(145deg,#1a1a1a,#000); border:2px solid #ffd700; box-shadow:0 0 25px #ffcc00; }
+input { width:80%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ffd700; background:#0d0d0d; color:#ffd700; font-size:16px; }
+button { padding:12px 20px; border-radius:10px; border:none; background:#ffd700; color:#000; font-weight:bold; cursor:pointer; }
+button:hover { background:#ffea66; }
+#errorMsg { margin-top:10px; font-weight:bold; }
+.error { color:#ff6666; }
+.success { color:#66ff66; }
 </style>
 </head>
 <body>
 <div class="gate">
   <h1>Enter Your Access Code</h1>
-  <p>Input your code to continue</p>
   <input type="text" id="codeInput" placeholder="Enter your code">
   <br>
   <button onclick="validateCode()">Enter</button>
@@ -69,21 +26,23 @@ button:hover { background: #ffea66; }
 
 <script>
 const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
+let codes = [];
 
+// Load JSON dari GitHub Pages
 async function loadCodes() {
   try {
     const res = await fetch(codesUrl + '?ts=' + Date.now());
-    return await res.json();
+    codes = await res.json();
   } catch(e) {
     console.error('Failed to load codes', e);
-    const msg = document.getElementById('errorMsg');
-    msg.textContent = 'Failed to load codes';
-    msg.className = 'error';
-    return [];
+    document.getElementById('errorMsg').textContent = 'Failed to load codes';
+    document.getElementById('errorMsg').className = 'error';
   }
 }
 
+// Validasi kode
 async function validateCode() {
+  await loadCodes(); // pastikan ambil JSON terbaru
   const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
   const msg = document.getElementById('errorMsg');
   msg.textContent = '';
@@ -95,39 +54,33 @@ async function validateCode() {
     return;
   }
 
-  msg.textContent = 'Checking code...';
-  msg.className = 'loading';
-
-  const codes = await loadCodes();
-  const entry = codes.find(c => c.code === codeInput);
-
-  if (!entry) {
+  const found = codes.find(c => c.code === codeInput);
+  if (!found) {
     msg.textContent = 'Code not found';
     msg.className = 'error';
     return;
   }
 
-  if (entry.used) {
+  if (found.used) {
     msg.textContent = 'Code already used';
     msg.className = 'error';
     return;
   }
 
-  // Kode valid
-  msg.textContent = '✅ Code valid! Preparing redirect...';
+  // Tandai digunakan lokal saja
+  found.used = true;
+
+  msg.textContent = '✅ Code valid! Redirecting...';
   msg.className = 'success';
 
-  // Animasi countdown sebelum redirect
-  let countdown = 3;
-  const interval = setInterval(() => {
-    msg.textContent = `✅ Code valid! Redirecting in ${countdown}...`;
-    countdown--;
-    if (countdown < 0) {
-      clearInterval(interval);
-      window.location.href = 'https://is.gd/plinko88';
-    }
-  }, 1000);
+  // Redirect ke game
+  setTimeout(() => {
+    window.location.href = 'https://is.gd/plinko88';
+  }, 800);
 }
+
+// Load codes awal
+loadCodes();
 </script>
 </body>
 </html>
