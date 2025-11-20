@@ -20,11 +20,6 @@ body {
   background: linear-gradient(145deg, #1a1a1a, #000);
   border: 2px solid #ffd700;
   box-shadow: 0 0 25px #ffcc00;
-  animation: glow 2s infinite alternate;
-}
-@keyframes glow {
-  from { box-shadow: 0 0 15px #ccac00; }
-  to   { box-shadow: 0 0 35px #ffe680; }
 }
 input {
   width: 80%;
@@ -58,7 +53,7 @@ button:hover { background: #ffea66; }
 </head>
 <body>
 <div class="gate">
-  <h1 style="font-size: 28px; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px; text-shadow: 0 0 12px #ffd700;">Enter Your Unique Access Code</h1>
+  <h1>Enter Your Unique Access Code</h1>
   <p>Input your code to continue</p>
   <input type="text" id="codeInput" placeholder="Enter your code">
   <br>
@@ -67,26 +62,28 @@ button:hover { background: #ffea66; }
 </div>
 
 <script>
+// URL JSON publik dari GitHub Pages
 const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
 let codes = [];
 
-// Fetch codes
+// Fetch JSON terbaru
 async function loadCodes() {
   try {
     const res = await fetch(codesUrl + '?ts=' + Date.now());
-    if (!res.ok) throw new Error('Network response was not ok');
+    if (!res.ok) throw new Error('Network response not ok: ' + res.status);
     codes = await res.json();
-  } catch (e) {
+    console.log('Codes loaded:', codes);
+  } catch(e) {
     console.error('Failed to load codes:', e);
     const msg = document.getElementById('errorMsg');
-    msg.textContent = 'Failed to load codes. Try again later.';
+    msg.textContent = 'Failed to load codes: ' + e.message;
     msg.className = 'error';
   }
 }
 
-// Validate input code
+// Validasi kode
 async function validateCode() {
-  await loadCodes();
+  await loadCodes(); // load JSON terbaru
   const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
   const msg = document.getElementById('errorMsg');
   msg.textContent = '';
@@ -111,18 +108,19 @@ async function validateCode() {
     return;
   }
 
-  // Mark as used locally (GitHub sync via Admin Generator)
+  // Tandai used (hanya lokal, Admin Generator nanti update ke GitHub)
   found.used = true;
 
   msg.textContent = '✅ Code valid! Redirecting...';
   msg.className = 'success';
 
+  // Redirect langsung ke game
   setTimeout(() => {
     window.location.href = 'https://is.gd/plinko88';
   }, 800);
 }
 
-// Load codes immediately
+// Load JSON saat halaman dibuka
 loadCodes();
 </script>
 </body>
