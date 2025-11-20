@@ -3,108 +3,91 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Gold Royale</title>
-
+<title>Player Gate</title>
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background: #000;
-    color: #ffd700;
-    text-align: center;
-    padding: 60px 20px;
-}
-.gate {
-    max-width: 420px;
-    padding: 30px;
-    margin: auto;
-    border-radius: 20px;
-    background: linear-gradient(145deg, #1a1a1a, #000000);
-    border: 2px solid #ffd700;
-    box-shadow: 0 0 25px #ffcc00;
-}
-input {
-    width: 80%;
-    padding: 12px;
-    margin-bottom: 15px;
-    border-radius: 10px;
-    border: 1px solid #ffd700;
-    background: #0d0d0d;
-    color: #ffd700;
-    font-size: 16px;
-}
-button {
-    padding: 12px 20px;
-    border-radius: 10px;
-    border: none;
-    background: #ffd700;
-    color: #000;
-    font-weight: bold;
-    font-size: 16px;
-    cursor: pointer;
-}
-button:hover {
-    background: #ffea66;
-}
-#errorMsg {
-    color: #ff4e4e;
-    font-weight: bold;
-    margin-top: 12px;
-}
-#successMsg {
-    color: #6bff6b;
-    font-weight: bold;
-    margin-top: 12px;
-}
+    body {
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: white;
+        text-align: center;
+        padding-top: 80px;
+    }
+    input {
+        padding: 10px;
+        width: 260px;
+        font-size: 18px;
+        border-radius: 6px;
+        border: none;
+        margin-bottom: 10px;
+    }
+    button {
+        padding: 10px 20px;
+        font-size: 18px;
+        background: #28a745;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        color: white;
+    }
+    #msg { margin-top: 20px; font-size: 18px; color: #ff5555; }
 </style>
 </head>
-
 <body>
 
-<div class="gate">
-    <h1>Enter Access Code</h1>
-    <p>Input your code to continue</p>
-
-    <input type="text" id="codeInput" placeholder="Enter your code">
-    <br>
-    <button onclick="validateCode()">Enter</button>
-
-    <p id="errorMsg"></p>
-    <p id="successMsg"></p>
-</div>
+<h2>PLAYER GATE ACCESS</h2>
+<input id="codeInput" type="text" placeholder="Enter Access Code">
+<br>
+<button onclick="checkCode()">ENTER</button>
+<div id="msg"></div>
 
 <script>
-const codesUrl = "https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json";
-const redirectURL = "https://is.gd/plinko88";
-let codes = [];
+const url = "https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json";
 
-// Load JSON dari GitHub Pages (READ ONLY)
-fetch(codesUrl)
-  .then(res => res.json())
-  .then(data => { codes = data; })
-  .catch(err => console.error("Failed to load codes:", err));
+async function checkCode() {
+    const userCode = document.getElementById("codeInput").value.trim();
+    const msg = document.getElementById("msg");
+    msg.textContent = "Checking...";
 
-function validateCode() {
-    const codeInput = document.getElementById("codeInput").value.trim().toUpperCase();
-    const err = document.getElementById("errorMsg");
-    const ok = document.getElementById("successMsg");
-
-    err.textContent = "";
-    ok.textContent = "";
-
-    if (!codeInput) {
-        err.textContent = "Code cannot be empty";
+    if (!userCode) {
+        msg.textContent = "Please enter your code.";
         return;
     }
 
-    const found = codes.find(c => c.code === codeInput);
-    if (!found) {
-        err.textContent = "Code not found";
-        return;
-    }
+    try {
+        const response = await fetch(url + "?nocache=" + Date.now());
 
-    // Hanya cek saja, tidak update GitHub dari sini
-    ok.textContent = "✔️ Code valid! Redirecting...";
-    setTimeout(() => window.location.href = redirectURL, 700);
+        if (!response.ok) {
+            msg.textContent = "Failed to load code list (" + response.status + ")";
+            return;
+        }
+
+        const data = await response.json();
+
+        // JSON harus format:
+        // { "codes": { "ABCD1234": "http://directlink.com/game" } }
+
+        if (!data.codes) {
+            msg.textContent = "Invalid JSON format: missing 'codes'.";
+            return;
+        }
+
+        const gameLink = data.codes[userCode];
+
+        if (!gameLink) {
+            msg.textContent = "Access code not found.";
+            return;
+        }
+
+        msg.style.color = "#00ff88";
+        msg.textContent = "Access Granted! Redirecting...";
+
+        setTimeout(() => {
+            window.location.href = gameLink;
+        }, 800);
+
+    } catch (error) {
+        msg.textContent = "Error: " + error.message;
+    }
 }
 </script>
 
