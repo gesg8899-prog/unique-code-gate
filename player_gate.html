@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Gold Royale</title>
+<title>Player Gate – Fixed Edition</title>
 <style>
 body { font-family: Arial, sans-serif; background:#000; color:#ffd700; text-align:center; padding:60px 30px; }
 .gate { max-width:450px; margin:auto; padding:30px; border-radius:20px; background:linear-gradient(145deg,#1a1a1a,#000); border:2px solid #ffd700; box-shadow:0 0 25px #ffcc00; }
@@ -25,9 +25,22 @@ button:hover { background:#ffea66; }
 </div>
 
 <script>
-// URL JSON dari GitHub Pages
+// URL JSON dari Admin Generator
 const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
 const redirectURL = 'https://is.gd/plinko88';
+
+// Ambil kode terbaru
+async function loadCodes() {
+  try {
+    const res = await fetch(codesUrl + '?ts=' + Date.now());
+    if (!res.ok) throw new Error('Failed to fetch codes');
+    const codes = await res.json();
+    return codes;
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
 
 // Validasi kode
 async function validateCode() {
@@ -36,40 +49,41 @@ async function validateCode() {
   msg.textContent = '';
   msg.className = '';
 
-  if(!codeInput){
+  if (!codeInput) {
     msg.textContent = 'Please enter your access code';
     msg.className = 'error';
     return;
   }
 
-  try {
-    const res = await fetch(codesUrl + '?ts=' + Date.now());
-    if(!res.ok) throw new Error('Failed to fetch codes');
-    const codes = await res.json();
-
-    const found = codes.find(c => c.code === codeInput);
-
-    if(!found){
-      msg.textContent = 'Code not found';
-      msg.className = 'error';
-      return;
-    }
-
-    // Tandai dipakai di browser ini (localStorage) supaya bisa dipakai berkali-kali
-    if(!localStorage.getItem(`code_${codeInput}`)){
-      localStorage.setItem(`code_${codeInput}`, 'true');
-    }
-
-    // Langsung redirect ke game
-    msg.textContent = 'Access Granted. Redirecting...';
-    msg.className = 'success';
-    setTimeout(()=>window.location.href=redirectURL,600);
-
-  } catch(e){
-    console.error(e);
-    msg.textContent = 'Connection error';
+  const codes = await loadCodes();
+  if (!codes) {
+    msg.textContent = 'Failed to load codes';
     msg.className = 'error';
+    return;
   }
+
+  const found = codes.find(c => c.code === codeInput);
+  if (!found) {
+    msg.textContent = 'Code not found';
+    msg.className = 'error';
+    return;
+  }
+
+  // ✅ Jika kode sudah dipakai global di GitHub
+  if (found.used) {
+    msg.textContent = 'Code already used globally';
+    msg.className = 'error';
+    return;
+  }
+
+  // ✅ Browser yang sama bisa pakai berkali-kali
+  if (!sessionStorage.getItem(`code_${codeInput}`)) {
+    sessionStorage.setItem(`code_${codeInput}`, 'true');
+  }
+
+  msg.textContent = 'Access Granted. Redirecting...';
+  msg.className = 'success';
+  setTimeout(() => window.location.href = redirectURL, 600);
 }
 </script>
 </body>
