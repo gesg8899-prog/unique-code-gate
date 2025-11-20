@@ -3,86 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Gold Black</title>
+<title>Player Gate</title>
 <style>
-body { font-family: Arial, sans-serif; background: #000; color: #ffd700; text-align: center; padding: 60px 30px; }
-.gate { max-width: 420px; padding: 30px; margin: auto; border-radius: 20px; background: linear-gradient(145deg, #1a1a1a, #000); border: 2px solid #ffd700; box-shadow: 0 0 25px #ffcc00; }
-input { width: 80%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #ffd700; background: #0d0d0d; color: #ffd700; font-size: 16px; }
-button { padding: 12px 20px; border-radius: 10px; border: none; background: #ffd700; color: #000; font-weight: bold; font-size: 16px; cursor: pointer; }
-button:hover { background: #ffea66; }
-.error { color: #ff6666; margin-top: 10px; }
-.success { color: #66ff66; margin-top: 10px; }
+body {font-family: Arial,sans-serif; background:#000; color:#ffd700; text-align:center; padding:50px;}
+.gate {max-width:420px;margin:auto;padding:30px;border-radius:20px;background:#111;border:2px solid #ffd700;box-shadow:0 0 25px #ffcc00;}
+input {width:80%;padding:12px;margin-bottom:15px;border-radius:10px;border:1px solid #ffd700;background:#0d0d0d;color:#ffd700;font-size:16px;}
+button {padding:12px 20px;border-radius:10px;border:none;background:#ffd700;color:#000;font-weight:bold;cursor:pointer;}
+button:hover {background:#ffea66;}
+.error {color:#ff4040;margin-top:10px;}
+.success {color:#66ff66;margin-top:10px;}
 </style>
 </head>
 <body>
 <div class="gate">
 <h1>Enter Your Access Code</h1>
-<p>Input your code to continue</p>
-<input type="text" id="codeInput" placeholder="Enter your code"><br>
+<input type="text" id="codeInput" placeholder="Enter code">
+<br>
 <button onclick="validateCode()">Enter</button>
 <p id="msg"></p>
 </div>
 
 <script>
-const JSON_URL = "https://gesg8899-prog.github.io/unique-code-gate/player_codes.json";
-const REDIRECT_URL = "https://gesg8899-prog.github.io/plinkoGE88/galactic_plinko.html";
+const codesUrl = 'https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json';
+const redirectGame = 'https://gesg8899-prog.github.io/plinkoGE88/game.html';
 
 let codes = [];
 
-// Load codes from GitHub Pages JSON
-async function loadCodes() {
-  try {
-    const res = await fetch(JSON_URL);
-    codes = await res.json();
-    console.log("Codes loaded:", codes);
-  } catch (e) {
-    console.error("Failed to load codes:", e);
-    document.getElementById("msg").textContent = "Failed to load codes. Try again later.";
-    document.getElementById("msg").className = "error";
-  }
+// Load codes JSON
+fetch(codesUrl)
+  .then(res => res.json())
+  .then(data => codes = data)
+  .catch(()=>console.log('Failed to load codes'));
+
+function validateCode(){
+  const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
+  const msg = document.getElementById('msg');
+  msg.textContent = '';
+
+  if(!codeInput){ msg.textContent = 'Code cannot be empty'; msg.className='error'; return; }
+
+  const found = codes.find(c=>c.code===codeInput);
+  if(!found){ msg.textContent='Code not found'; msg.className='error'; return; }
+  if(found.used){ msg.textContent='Code already used'; msg.className='error'; return; }
+
+  // Redirect ke game dengan kode
+  msg.textContent='✅ Code valid! Redirecting...';
+  msg.className='success';
+  setTimeout(()=>{ window.location.href = redirectGame + '?code=' + encodeURIComponent(codeInput); }, 800);
 }
-
-// Validate user input
-function validateCode() {
-  const input = document.getElementById("codeInput").value.trim().toUpperCase();
-  const msgEl = document.getElementById("msg");
-  msgEl.textContent = "";
-
-  if (!input) {
-    msgEl.textContent = "Code cannot be empty";
-    msgEl.className = "error";
-    return;
-  }
-
-  const found = codes.find(c => c.code.toUpperCase() === input);
-
-  if (!found) {
-    msgEl.textContent = "Code not found";
-    msgEl.className = "error";
-    return;
-  }
-
-  if (found.used) {
-    msgEl.textContent = "Code already used";
-    msgEl.className = "error";
-    return;
-  }
-
-  // Simpan di localStorage agar tidak dipakai ulang di browser ini
-  localStorage.setItem("playerCode", input);
-  localStorage.setItem("played_" + input, "true");
-
-  msgEl.textContent = "Code valid! Redirecting...";
-  msgEl.className = "success";
-
-  // Redirect ke game dengan kode sebagai parameter
-  setTimeout(() => {
-    window.location.href = REDIRECT_URL + "?code=" + input;
-  }, 800);
-}
-
-// Load codes saat halaman dibuka
-loadCodes();
 </script>
 </body>
 </html>
