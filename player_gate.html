@@ -3,135 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gold Plinko – Access Gate</title>
+<title>Player Gate – Gold Black</title>
 <style>
-body { margin:0; background:#010114; color:#ffd700; font-family: Arial; text-align:center; }
-.gate, .game { max-width: 420px; margin: 40px auto; padding: 30px; border-radius: 20px; background: linear-gradient(145deg,#1a1a1a,#000); border:2px solid #ffd700; box-shadow:0 0 25px #ffcc00; }
-input { width: 80%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ffd700; background:#0d0d0d; color:#ffd700; font-size:16px; }
-button { padding:12px 20px; border-radius:10px; border:none; background:#ffd700; color:#000; font-weight:bold; font-size:16px; cursor:pointer; }
-button:hover { background:#ffea66; }
-.error { color:#ff6666; margin-top:10px; }
-#c { width:100%; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,.6); }
+body {
+  font-family: Arial, sans-serif;
+  background: #000000;
+  color: #ffd700;
+  text-align: center;
+  padding: 60px 30px;
+}
+.gate {
+  max-width: 420px;
+  padding: 30px;
+  margin: auto;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #1a1a1a, #000000);
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 25px #ffcc00;
+  animation: glow 2s infinite alternate;
+}
+@keyframes glow { from { box-shadow: 0 0 15px #ccac00; } to { box-shadow: 0 0 35px #ffe680; } }
+input {
+  width: 80%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  border: 1px solid #ffd700;
+  background: #0d0d0d;
+  color: #ffd700;
+  font-size: 16px;
+}
+button {
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: none;
+  background: #ffd700;
+  color: #000;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+button:hover { background: #ffea66; }
+.error { color: #ff6666; margin-top: 10px; }
+.success { color: #66ff66; margin-top: 10px; }
 </style>
 </head>
 <body>
-
-<div id="gate" class="gate">
-  <h1>Enter Your Unique Access Code</h1>
+<div class="gate">
+  <h1 style="font-size: 28px; font-weight: 700; margin-bottom: 10px;">Enter Your Unique Access Code</h1>
+  <p>Input your code to continue</p>
   <input type="text" id="codeInput" placeholder="Enter your code">
   <br>
-  <button onclick="enterGame()">Enter</button>
-  <p class="error" id="errorMsg"></p>
-</div>
-
-<div id="game" class="game" style="display:none;">
-  <h2>🎮 Galactic Plinko 🎮</h2>
-  <canvas id="c" width="360" height="640"></canvas>
-  <div id="pointsBar" style="margin:6px 0;background:rgba(0,0,0,0.3);border-radius:8px;height:24px;width:100%;overflow:hidden;position:relative;">
-    <div id="pointsFill" style="height:100%;width:0%;border-radius:6px;box-shadow:0 0 10px #fff inset;"></div>
-    <div id="pointsText" style="position:absolute;left:50%;top:0;transform:translateX(-50%);color:#fff;font-weight:700;text-shadow:0 0 6px #fff;">0%</div>
-  </div>
-  <div id="results">Total Points: 0 | Balls Left: 50</div>
+  <button onclick="validateCode()">Enter</button>
+  <p class="error" id="msg"></p>
 </div>
 
 <script>
-// ===== CONFIG =====
-const PLAYER_GATE_URL = 'https://gesg8899-prog.github.io/unique-code-gate/player_gate.html';
-const JSON_CODES = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
+// ================================
+// CONFIG
+// ================================
+const codesUrl = 'https://gesg8899-prog.github.io/unique-code-gate/player_codes.json';
+const redirectURL = 'https://gesg8899-prog.github.io/plinkoGE88/galactic_plinko.html';
+
 let codes = [];
 
-// ===== FETCH CODES =====
-fetch(JSON_CODES, {cache:"no-cache"})
-  .then(r => r.json())
-  .then(data => { codes = data.map(c => ({code:c.code.toUpperCase(), used:c.used})); })
-  .catch(err => console.error('Failed to load codes', err));
+// ================================
+// LOAD CODES
+// ================================
+fetch(codesUrl)
+  .then(res => res.json())
+  .then(data => codes = data)
+  .catch(() => console.log('Failed to load codes'));
 
-// ===== GATE LOGIC =====
-function enterGame(){
-  const input = document.getElementById('codeInput').value.trim().toUpperCase();
-  const errorMsg = document.getElementById('errorMsg');
-  errorMsg.textContent = '';
-
-  if(!input){ errorMsg.textContent = 'Code cannot be empty'; return; }
-
-  const found = codes.find(c => c.code === input);
-  if(!found){ errorMsg.textContent = 'Code not found'; return; }
-
-  if(found.used || localStorage.getItem('played_' + input) === 'true'){
-      errorMsg.textContent = 'Code already used'; return;
-  }
-
-  localStorage.setItem('played_' + input, 'true');
-
-  // Hide gate, show game
-  document.getElementById('gate').style.display='none';
-  document.getElementById('game').style.display='block';
-
-  // Init game
-  startPlinkoGame();
-}
-
-// ===== PLINKO GAME =====
-function startPlinkoGame(){
-  const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
-  const W=canvas.width, H=canvas.height;
-  let coins=[], planets=[], astronauts=[];
-  let ballsLeft=50, points=0;
-  const ROWS=6, COLS=6, GRAVITY=0.28, BOUNCE=0.88, COIN_RADIUS=6, PLANET_RADIUS=18;
-  const slotPoints=[0.5,0.5,0.5,0.5,0.5,0.5,1,1,1,2,2,3];
-  const planetPNGUrls=[
-    'https://static.gwvkyk.com/media/12dc37efda1968e838ea3.png',
-    'https://static.gwvkyk.com/media/7b885200ea196d8678586.png',
-    'https://static.gwvkyk.com/media/c7933a00ea1965020c2e2.png'
-  ];
-  const planetImages = planetPNGUrls.map(url=>{const img=new Image();img.src=url;return img;});
-  const astronautImg = new Image(); astronautImg.src='https://static.gwvkyk.com/media/ef7e4c21da196c3db7efa.png';
-
-  const pointsFill=document.getElementById('pointsFill');
-  const pointsText=document.getElementById('pointsText');
-  const resultsEl=document.getElementById('results');
-
-  function shuffle(array){for(let i=array.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[array[i],array[j]]=[array[j],array[i]];}return array;}
-  function generatePlanets(){planets=[]; const leftPadding=30; const gapX=(W-leftPadding*2)/(COLS-1); for(let r=0;r<ROWS;r++){for(let c=0;c<COLS;c++){const x=leftPadding + c*gapX + (r%2? gapX/2:0); const y=120 + r*70; const img=planetImages[Math.floor(Math.random()*planetImages.length)]; planets.push({x,y,r:PLANET_RADIUS,img,lightPhase:Math.random()*Math.PI*2});}}}
-  function initGame(){coins=[]; points=0; ballsLeft=50; generatePlanets(); updateResultsText();}
-
-  canvas.addEventListener('pointerdown', ev=>{
-    if(ballsLeft<=0) return;
-    const rect=canvas.getBoundingClientRect();
-    const px=(ev.clientX-rect.left)*(canvas.width/rect.width);
-    coins.push({x:Math.max(COIN_RADIUS,Math.min(W-COIN_RADIUS,px)),y:36,vx:(Math.random()-0.5)*0.6,vy:0,r:COIN_RADIUS,trail:[],collected:false,finished:false});
-    ballsLeft--; updateResultsText();
-  });
-
-  function updateResultsText(){
-    resultsEl.innerHTML=`Total Points: ${points.toFixed(1)} | Balls Left: ${ballsLeft}`;
-    const perc=Math.min(points/50,1);
-    pointsFill.style.width=(perc*100)+'%';
-    pointsText.textContent=Math.round(perc*100)+'%';
-  }
-
-  function reflect(vx,vy,nx,ny,damp=BOUNCE){const dot=vx*nx+vy*ny;return {vx:(vx-2*dot*nx)*damp,vy:(vy-2*dot*ny)*damp};}
-  function createFloatingPoint(x,y,value){const span=document.createElement('div');span.style.position='absolute';span.style.left=x+'px';span.style.top=y+'px';span.textContent='+'+value;document.body.appendChild(span);setTimeout(()=>span.remove(),1000);}
-
-  function update(){
-    for(let i=coins.length-1;i>=0;i--){
-      const c=coins[i]; c.vy+=GRAVITY;c.x+=c.vx;c.y+=c.vy;c.trail.push({x:c.x,y:c.y}); if(c.trail.length>10)c.trail.shift();
-      if(c.x-c.r<0){c.x=c.r;c.vx*=-1;} if(c.x+c.r>W){c.x=W-c.r;c.vx*=-1;}
-      planets.forEach(p=>{const dx=c.x-p.x,dy=c.y-p.y,dist=Math.hypot(dx,dy),minD=c.r+p.r;if(dist<minD && dist>0.0001){const nx=dx/dist,ny=dy/dist,overlap=minD-dist;c.x+=nx*(overlap+0.2);c.y+=ny*(overlap+0.2);const nv=reflect(c.vx,c.vy,nx,ny);c.vx=nv.vx;c.vy=nv.vy;}});
-
-      if(c.y>H-40 && !c.collected){const randIndex=Math.floor(Math.random()*slotPoints.length); const pointVal=slotPoints[randIndex]; points+=pointVal; c.collected=true; createFloatingPoint(c.x,H-50,pointVal); updateResultsText();}
-      if(c.y>H+50){c.finished=true; coins.splice(i,1);}
+// ================================
+// VALIDATE CODE
+// ================================
+function validateCode() {
+    const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
+    const msg = document.getElementById('msg');
+    msg.textContent = '';
+    
+    if (!codeInput) {
+        msg.textContent = 'Code cannot be empty';
+        msg.className = 'error';
+        return;
     }
-  }
+    
+    const found = codes.find(c => c.code === codeInput);
+    
+    if (!found) {
+        msg.textContent = 'Code not found';
+        msg.className = 'error';
+        return;
+    }
 
-  function drawBackground(){ctx.fillStyle='#010114';ctx.fillRect(0,0,W,H);}
-  function drawPlanets(){planets.forEach(p=>{if(p.img.complete){ctx.drawImage(p.img,p.x-PLANET_RADIUS,p.y-PLANET_RADIUS,PLANET_RADIUS*2,PLANET_RADIUS*2);}});}
-  function drawCoins(){coins.forEach(c=>{ctx.beginPath();ctx.arc(c.x,c.y,c.r,0,Math.PI*2);ctx.fillStyle='#0ff';ctx.fill();});}
-  function draw(){drawBackground();drawPlanets();drawCoins();}
-  function loop(){update();draw();requestAnimationFrame(loop);}
-  initGame(); loop();
+    if (found.used) {
+        msg.textContent = 'Code already used';
+        msg.className = 'error';
+        return;
+    }
+    
+    // SUCCESS → redirect ke game dengan kode
+    msg.textContent = '✅ Code valid! Redirecting...';
+    msg.className = 'success';
+    localStorage.setItem('playerCode', codeInput); // simpan di browser
+    setTimeout(() => {
+        window.location.href = redirectURL + '?code=' + encodeURIComponent(codeInput);
+    }, 800);
 }
 </script>
-
 </body>
 </html>
