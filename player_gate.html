@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Advanced Auto Sync Edition</title>
+<title>Player Gate – Fixed Version</title>
 <style>
 body {
   font-family: Arial, sans-serif;
@@ -54,26 +54,27 @@ button {
 </div>
 
 <script>
-// ================================
-// CONFIG
-// ================================
-const rawURL = "https://raw.githubusercontent.com/gesg8899-prog/plinkoGE88/main/player_codes.json";
-const githubAPI = "https://api.github.com/repos/gesg8899-prog/plinkoGE88/contents/player_codes.json";
+// ==================================
+// FINAL VERSION CONFIG (FIXED)
+// ==================================
+const rawURL = "https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json";
+const githubAPI = "https://api.github.com/repos/gesg8899-prog/unique-code-gate/contents/player_codes.json";
 const redirectURL = "https://is.gd/plinko88";
 
-// ================================
-// FETCH LATEST CODES
-// ================================
+// ==================================
+// LOAD CODES
+// ==================================
 async function loadCodes() {
-  const res = await fetch(rawURL + "?ts=" + Date.now());
+  const res = await fetch(rawURL + "?t=" + Date.now());
+  if (!res.ok) throw new Error("Failed to load JSON");
   return await res.json();
 }
 
-// ================================
-// SAVE UPDATED CODES BACK TO GITHUB
-// ================================
+// ==================================
+// SAVE UPDATED JSON BACK TO GITHUB
+// ==================================
 async function saveToGitHub(updatedCodes) {
-  const token = "TOKEN_DI_ISI_ADMIN"; // ganti manual
+  const token = "TOKEN_ADMIN_KAMU"; // isi manual
 
   const getFile = await fetch(githubAPI, {
     headers: { "Authorization": `Bearer ${token}` }
@@ -89,7 +90,7 @@ async function saveToGitHub(updatedCodes) {
       "Authorization": `Bearer ${token}`
     },
     body: JSON.stringify({
-      message: "Update code usage",
+      message: "Update used code",
       content: newContent,
       sha: fileData.sha
     })
@@ -98,9 +99,9 @@ async function saveToGitHub(updatedCodes) {
   return upload.ok;
 }
 
-// ================================
-// VALIDATE CODE
-// ================================
+// ==================================
+// VALIDATE USER CODE
+// ==================================
 async function validateCode() {
   const msg = document.getElementById("msg");
   msg.textContent = "";
@@ -128,29 +129,26 @@ async function validateCode() {
       return;
     }
 
-    // Tandai USED
-    entry.used = true;
+    entry.used = true; // mark as used
 
-    // SAVE BALIK KE GITHUB
-    msg.textContent = "Updating...";
+    msg.textContent = "Updating server...";
     msg.className = "success";
 
     const ok = await saveToGitHub(codes);
-
     if (!ok) {
       msg.textContent = "Failed to update server";
       msg.className = "error";
       return;
     }
 
-    // SUCCESS -> redirect
-    msg.textContent = "Access Granted. Redirecting...";
+    msg.textContent = "Access Granted! Redirecting...";
     msg.className = "success";
+
     setTimeout(() => {
       window.location.href = redirectURL;
     }, 800);
 
-  } catch (e) {
+  } catch (err) {
     msg.textContent = "Connection error";
     msg.className = "error";
   }
