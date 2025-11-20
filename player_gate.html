@@ -3,155 +3,77 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Fixed Version</title>
+<title>Player Gate – Auto Update GitHub</title>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #000;
-  color: #ffd700;
-  text-align: center;
-  padding: 60px 30px;
-}
-.gate {
-  max-width: 450px;
-  margin: auto;
-  padding: 30px;
-  border-radius: 20px;
-  background: linear-gradient(145deg, #1a1a1a, #000);
-  border: 2px solid #ffd700;
-  box-shadow: 0 0 25px #ffcc00;
-}
-input {
-  width: 80%;
-  padding: 12px;
-  margin-bottom: 15px;
-  border-radius: 10px;
-  border: 1px solid #ffd700;
-  background: #0d0d0d;
-  color: #ffd700;
-  font-size: 16px;
-}
-button {
-  padding: 12px 20px;
-  margin: 5px;
-  border-radius: 10px;
-  border: none;
-  background: #ffd700;
-  color: #000;
-  font-weight: bold;
-  cursor: pointer;
-}
-.error { color: #ff4040; margin-top: 10px; }
-.success { color: #66ff66; margin-top: 10px; }
+body { font-family: Arial,sans-serif; background:#000; color:#ffd700; text-align:center; padding:60px 30px; }
+.gate { max-width:450px; margin:auto; padding:30px; border-radius:20px; background:linear-gradient(145deg,#1a1a1a,#000); border:2px solid #ffd700; box-shadow:0 0 25px #ffcc00; }
+input { width:80%; padding:12px; margin-bottom:15px; border-radius:10px; border:1px solid #ffd700; background:#0d0d0d; color:#ffd700; font-size:16px; }
+button { padding:12px 20px; margin:5px; border-radius:10px; border:none; background:#ffd700; color:#000; font-weight:bold; cursor:pointer; }
+.error { color:#ff4040; margin-top:10px; }
+.success { color:#66ff66; margin-top:10px; }
 </style>
 </head>
 <body>
 <div class="gate">
-  <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 10px;">Enter Access Code</h1>
+  <h1 style="font-size:26px;font-weight:700;margin-bottom:10px;">Enter Access Code</h1>
   <input type="text" id="codeInput" placeholder="Enter your code">
   <button onclick="validateCode()">Enter</button>
   <p id="msg"></p>
 </div>
 
 <script>
-// ==================================
-// FINAL VERSION CONFIG (FIXED)
-// ==================================
 const rawURL = "https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json";
 const githubAPI = "https://api.github.com/repos/gesg8899-prog/unique-code-gate/contents/player_codes.json";
 const redirectURL = "https://is.gd/plinko88";
 
-// ==================================
-// LOAD CODES
-// ==================================
+// Masukkan tokenmu di sini
+const token = "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";
+
+// Load codes
 async function loadCodes() {
   const res = await fetch(rawURL + "?t=" + Date.now());
   if (!res.ok) throw new Error("Failed to load JSON");
   return await res.json();
 }
 
-// ==================================
-// SAVE UPDATED JSON BACK TO GITHUB
-// ==================================
+// Update GitHub
 async function saveToGitHub(updatedCodes) {
-  const token = "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"; // isi manual
-
   const getFile = await fetch(githubAPI, {
     headers: { "Authorization": `Bearer ${token}` }
   });
   const fileData = await getFile.json();
-
-  const newContent = btoa(JSON.stringify(updatedCodes, null, 2));
-
+  const newContent = btoa(JSON.stringify(updatedCodes,null,2));
   const upload = await fetch(githubAPI, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      message: "Update used code",
-      content: newContent,
-      sha: fileData.sha
-    })
+    headers: { "Content-Type":"application/json", "Authorization":`Bearer ${token}` },
+    body: JSON.stringify({ message:"Update used code", content:newContent, sha:fileData.sha })
   });
-
   return upload.ok;
 }
 
-// ==================================
-// VALIDATE USER CODE
-// ==================================
+// Validate code
 async function validateCode() {
   const msg = document.getElementById("msg");
   msg.textContent = "";
-
   const code = document.getElementById("codeInput").value.trim().toUpperCase();
-  if (!code) {
-    msg.textContent = "Code cannot be empty";
-    msg.className = "error";
-    return;
-  }
+  if (!code) { msg.textContent="Code cannot be empty"; msg.className="error"; return; }
 
   try {
     let codes = await loadCodes();
-    let entry = codes.find(c => c.code === code);
+    let entry = codes.find(c=>c.code===code);
+    if (!entry) { msg.textContent="Code not found"; msg.className="error"; return; }
+    if (entry.used) { msg.textContent="Code already used"; msg.className="error"; return; }
 
-    if (!entry) {
-      msg.textContent = "Code not found";
-      msg.className = "error";
-      return;
-    }
-
-    if (entry.used) {
-      msg.textContent = "Code already used";
-      msg.className = "error";
-      return;
-    }
-
-    entry.used = true; // mark as used
-
-    msg.textContent = "Updating server...";
-    msg.className = "success";
+    entry.used = true; // mark used
+    msg.textContent="Updating server..."; msg.className="success";
 
     const ok = await saveToGitHub(codes);
-    if (!ok) {
-      msg.textContent = "Failed to update server";
-      msg.className = "error";
-      return;
-    }
+    if (!ok) { msg.textContent="Failed to update server"; msg.className="error"; return; }
 
-    msg.textContent = "Access Granted! Redirecting...";
-    msg.className = "success";
+    msg.textContent="Access Granted! Redirecting..."; msg.className="success";
+    setTimeout(()=>{ window.location.href=redirectURL; },800);
 
-    setTimeout(() => {
-      window.location.href = redirectURL;
-    }, 800);
-
-  } catch (err) {
-    msg.textContent = "Connection error";
-    msg.className = "error";
-  }
+  } catch(e) { msg.textContent="Connection error"; msg.className="error"; }
 }
 </script>
 </body>
