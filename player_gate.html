@@ -79,15 +79,16 @@ async function validateCode() {
     const res = await fetch(codesUrl + '?ts=' + Date.now());
     if(!res.ok) throw new Error('Failed to fetch codes');
     const codes = await res.json();
+    
+    // Hanya cek apakah kode ada di JSON
     const found = codes.find(c => c.code === codeInput);
-
     if(!found) {
       msg.textContent = 'Code not found';
       msg.className = 'error';
       return;
     }
 
-    // ✅ Clean Gate: hanya cek validitas, tidak menyimpan apapun di browser
+    // ✅ Langsung redirect, tidak ada status used
     msg.textContent = 'Access Granted. Redirecting...';
     msg.className = 'success';
     setTimeout(() => {
