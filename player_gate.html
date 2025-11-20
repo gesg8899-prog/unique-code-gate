@@ -3,113 +3,55 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Generator + Player Gate</title>
-<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<title>Player Gate</title>
 <style>
-body{font-family:sans-serif;background:#000;color:#ffd700;text-align:center;padding:40px;}
-.card{background:rgba(20,20,20,0.7);border:2px solid rgba(255,215,0,0.6);border-radius:25px;padding:35px;max-width:700px;margin:auto;backdrop-filter:blur(8px);box-shadow:0 0 25px rgba(255,215,0,0.25),0 0 50px rgba(255,215,0,0.1) inset;}
-input,button{width:80%;padding:12px;margin:10px 0;border-radius:10px;font-size:16px;}
-input{border:1px solid #d4af37;background:rgba(30,30,30,0.9);color:#ffd700;}
-button{background:#ffd700;border:none;color:#000;font-weight:bold;cursor:pointer;}
-button:hover{background:#ffea66;}
-table{width:100%;border-collapse:collapse;margin-top:25px;}
-th,td{padding:12px;border-bottom:1px solid rgba(255,215,0,0.2);}
+body{font-family:sans-serif;background:#000;color:#ffd700;text-align:center;padding:60px;}
+.gate{max-width:450px;margin:auto;padding:30px;border-radius:20px;background:linear-gradient(145deg,#1a1a1a,#000);border:2px solid #ffd700;box-shadow:0 0 25px #ffcc00;}
+.error{color:#ff4040;margin-top:10px;}
+.success{color:#66ff66;margin-top:10px;}
 </style>
 </head>
 <body>
-<div class="card">
-<h1>✨ Admin Generator + Player Gate ✨</h1>
-
-<label>Number of Codes to Generate:</label>
-<input type="number" id="codeCount" placeholder="Enter number of codes" min="1" max="200">
-<button onclick="generateCodes()">Generate Codes</button>
-<br>
-<button onclick="downloadJSON()">Download JSON</button>
-<button onclick="downloadExcel()">Download Excel</button>
-
-<h3>Generated Codes & Links</h3>
-<table id="codeTable">
-<thead><tr><th>Code</th><th>Direct Link</th></tr></thead>
-<tbody></tbody>
-</table>
+<div class="gate">
+<h1>Access Player Gate</h1>
+<p id="msg"></p>
 </div>
 
 <script>
-let codes=[];
-
-// CONFIG
-const username="gesg8899-prog";
-const repo="unique-code-gate";
-const filePath="player_codes.json";
+const rawURL="https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json";
 const redirectURL="https://is.gd/plinko88";
-const token="GANTI_DENGAN_TOKEN_ADMIN_GENERATOR"; // token aman
 
-// RANDOM CODE GENERATOR
-function generateRandomCode(length=8){
-  const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result='';
-  for(let i=0;i<length;i++) result+=chars.charAt(Math.floor(Math.random()*chars.length));
-  if(codes.some(c=>c.code===result)) return generateRandomCode(length);
-  return result;
+function getCodeFromURL(){
+  const params=new URLSearchParams(window.location.search);
+  return params.get("code")?.toUpperCase()||"";
 }
 
-function generateCodes(){
-  const count=parseInt(document.getElementById('codeCount').value);
-  if(!count || count<1){ alert('Please enter a valid number!'); return; }
-  codes=[];
-  for(let i=0;i<count;i++) codes.push({code:generateRandomCode(),used:false});
-  renderTable();
-}
+async function validateCode(){
+  const msg=document.getElementById("msg");
+  msg.textContent="";
+  const code=getCodeFromURL();
+  if(!code){
+    msg.textContent="No access code provided. Redirecting...";
+    msg.className="error";
+    return;
+  }
 
-// RENDER TABLE
-function renderTable(){
-  const tbody=document.querySelector('#codeTable tbody');
-  tbody.innerHTML='';
-  codes.forEach(c=>{
-    const tr=document.createElement('tr');
-    const link=`player_gate.html?code=${c.code}`;
-    tr.innerHTML=`<td>${c.code}</td><td><a href="${link}" target="_blank">${link}</a></td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-// DOWNLOAD JSON
-function downloadJSON(){
-  const blob=new Blob([JSON.stringify(codes,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='player_codes.json';
-  a.click();
-}
-
-// DOWNLOAD EXCEL
-function downloadExcel(){
-  const worksheet=XLSX.utils.json_to_sheet(codes);
-  const workbook=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook,worksheet,"Codes");
-  XLSX.writeFile(workbook,"player_codes.xlsx");
-}
-
-// UPLOAD TO GITHUB
-async function uploadToGitHub(){
-  const fileContent=btoa(JSON.stringify(codes,null,2));
-  // GET SHA
-  let sha=null;
   try{
-    const res=await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${filePath}`,{
-      headers:{ "Authorization": `Bearer ${token}` }
-    });
-    if(res.ok){ const data=await res.json(); sha=data.sha; }
-  }catch(e){console.error(e);}
-  // UPLOAD
-  const uploadRes=await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${filePath}`,{
-    method:"PUT",
-    headers:{ "Content-Type":"application/json","Authorization":`Bearer ${token}` },
-    body:JSON.stringify({message:"Upload updated player codes",content:fileContent,sha:sha??undefined})
-  });
-  if(uploadRes.ok) alert("Upload SUCCESS! 🎉");
-  else alert("Upload FAILED ❌ Check console for details");
+    const res=await fetch(rawURL+"?ts="+Date.now());
+    const codes=await res.json();
+    const entry=codes.find(c=>c.code===code);
+
+    if(!entry){ msg.textContent="Code not found"; msg.className="error"; return; }
+    if(entry.used){ msg.textContent="Code already used"; msg.className="error"; return; }
+
+    msg.textContent="Access Granted! Redirecting..."; msg.className="success";
+    setTimeout(()=>window.location.href=redirectURL,800);
+  }catch(e){
+    msg.textContent="Connection error"; msg.className="error";
+  }
 }
+
+window.onload=validateCode;
 </script>
 </body>
 </html>
