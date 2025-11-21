@@ -35,11 +35,6 @@ tr:hover td{ background: rgba(255,215,0,0.1);}
 <button onclick="downloadJSON()">Download JSON</button>
 <button onclick="downloadExcel()">Download Excel</button>
 
-<h3>Fetch Codes from GitHub (Raw URL)</h3>
-<input type="text" id="rawJsonUrl" placeholder="Raw GitHub URL to player_codes.json"
-       value="https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json">
-<button onclick="fetchCodes()">Fetch Codes</button>
-
 <table id="codeTable">
   <thead><tr><th>Code</th><th>Status</th></tr></thead>
   <tbody></tbody>
@@ -48,6 +43,22 @@ tr:hover td{ background: rgba(255,215,0,0.1);}
 
 <script>
 let codes = [];
+
+// Auto-fetch player_codes.json from same folder
+async function fetchCodesOnLoad(){
+  try {
+    const res = await fetch('./player_codes.json');
+    if(res.ok){
+      codes = await res.json();
+      renderTable();
+      console.log("Codes loaded ✅");
+    } else {
+      console.warn("player_codes.json not found, start fresh.");
+    }
+  } catch(e){
+    console.error("Failed to load codes:", e);
+  }
+}
 
 // Generate Random Code
 function generateRandomCode(length=8){
@@ -61,7 +72,6 @@ function generateRandomCode(length=8){
 function generateCodes(){
   const count=parseInt(document.getElementById('codeCount').value);
   if(!count || count<1){ alert('Please enter a valid number!'); return; }
-  codes=[];
   for(let i=0;i<count;i++){ codes.push({ code: generateRandomCode(), used:false }); }
   renderTable();
 }
@@ -95,44 +105,16 @@ function downloadExcel(){
   XLSX.writeFile(workbook, "player_codes.xlsx");
 }
 
-// Fetch codes from raw GitHub URL
-async function fetchCodes(){
-  const url = document.getElementById('rawJsonUrl').value.trim();
-  if(!url){ alert("Masukkan Raw GitHub URL!"); return; }
-  try{
-    const res = await fetch(url);
-    if(!res.ok) throw new Error("Failed to fetch");
-    const data = await res.json();
-    codes = data;
-    renderTable();
-    alert("Codes fetched successfully ✅");
-  }catch(e){
-    console.error(e);
-    alert("Failed to fetch codes ❌");
-  }
-}
-
-// ===================
-// Auto Sync API for Player Gate
-// ===================
-window.markCodeUsedAPI = async (code) => {
+// Mark code used API (for Player Gate)
+window.markCodeUsedAPI = (code) => {
   const entry = codes.find(c => c.code===code);
-  if(!entry) return false;
-  entry.used = true;
-
-  const url = document.getElementById('rawJsonUrl').value.trim();
-  if(!url) return false;
-
-  try{
-    const res = await fetch(url);
-    if(!res.ok) return false;
-    const data = await res.json();
-    codes = data.map(c=>c.code===code ? {...c, used:true} : c);
-    return true;
-  }catch(e){
-    return false;
-  }
+  if(entry) entry.used = true;
+  renderTable();
+  return !!entry;
 }
+
+// Fetch codes on load
+fetchCodesOnLoad();
 </script>
 </body>
 </html>
