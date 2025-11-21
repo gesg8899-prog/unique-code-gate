@@ -35,15 +35,9 @@ tr:hover td{ background: rgba(255,215,0,0.1);}
 <button onclick="downloadJSON()">Download JSON</button>
 <button onclick="downloadExcel()">Download Excel</button>
 
-<h3>GitHub Upload</h3>
-<input type="text" id="githubUsername" placeholder="GitHub Username" value="gesg8899-prog">
-<input type="text" id="repoName" placeholder="Repository Name" value="admin-generator">
-<input type="text" id="accessToken" placeholder="Personal Access Token (scope: repo)">
-<button onclick="uploadToGitHub()">Upload to GitHub</button>
-
-<h3>Fetch Codes from GitHub</h3>
-<input type="text" id="rawJsonUrl" placeholder="Raw GitHub URL to player_codes.json" 
-       value="https://gesg8899-prog.github.io/admin-generator/player_codes.json">
+<h3>Fetch Codes from GitHub (Raw URL)</h3>
+<input type="text" id="rawJsonUrl" placeholder="Raw GitHub URL to player_codes.json"
+       value="https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json">
 <button onclick="fetchCodes()">Fetch Codes</button>
 
 <table id="codeTable">
@@ -101,37 +95,7 @@ function downloadExcel(){
   XLSX.writeFile(workbook, "player_codes.xlsx");
 }
 
-// Upload to GitHub
-async function uploadToGitHub(){
-  const username = document.getElementById('githubUsername').value.trim();
-  const repo = document.getElementById('repoName').value.trim();
-  const token = document.getElementById('accessToken').value.trim();
-  if(!username || !repo){ alert("Username & Repo wajib diisi!"); return; }
-  if(!token){ alert("Access Token diperlukan!"); return; }
-
-  const filePath = "player_codes.json";
-  const fileContent = btoa(JSON.stringify(codes,null,2));
-
-  let sha = null;
-  try{
-    const res = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${filePath}`,{
-      headers:{ "Authorization": `Bearer ${token}` }
-    });
-    if(res.ok){ const data = await res.json(); sha = data.sha; }
-  }catch(e){ console.error("Failed get SHA:", e); }
-
-  try{
-    const uploadRes = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${filePath}`,{
-      method:"PUT",
-      headers:{ "Content-Type":"application/json","Authorization":`Bearer ${token}` },
-      body: JSON.stringify({ message:"Upload updated player codes", content:fileContent, sha: sha ?? undefined })
-    });
-    if(uploadRes.ok){ alert("Upload SUCCESS! 🎉"); } 
-    else{ alert("Upload FAILED ❌ Check console for details"); console.error(await uploadRes.text()); }
-  }catch(e){ console.error("Upload error:", e); alert("Upload FAILED ❌"); }
-}
-
-// Fetch codes from GitHub Pages URL
+// Fetch codes from raw GitHub URL
 async function fetchCodes(){
   const url = document.getElementById('rawJsonUrl').value.trim();
   if(!url){ alert("Masukkan Raw GitHub URL!"); return; }
@@ -156,28 +120,18 @@ window.markCodeUsedAPI = async (code) => {
   if(!entry) return false;
   entry.used = true;
 
-  const username = document.getElementById('githubUsername').value.trim();
-  const repo = document.getElementById('repoName').value.trim();
-  const token = document.getElementById('accessToken').value.trim();
-  if(!username || !repo || !token) return false;
-
-  let sha = null;
-  try{
-    const res = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/player_codes.json`,{
-      headers:{ "Authorization": `Bearer ${token}` }
-    });
-    if(res.ok){ const data = await res.json(); sha = data.sha; }
-    else return false;
-  }catch(e){ return false; }
+  const url = document.getElementById('rawJsonUrl').value.trim();
+  if(!url) return false;
 
   try{
-    const uploadRes = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/player_codes.json`,{
-      method:"PUT",
-      headers:{ "Content-Type":"application/json","Authorization":`Bearer ${token}` },
-      body: JSON.stringify({ message:"Mark code used", content:btoa(JSON.stringify(codes,null,2)), sha:sha ?? undefined })
-    });
-    return uploadRes.ok;
-  }catch(e){ return false; }
+    const res = await fetch(url);
+    if(!res.ok) return false;
+    const data = await res.json();
+    codes = data.map(c=>c.code===code ? {...c, used:true} : c);
+    return true;
+  }catch(e){
+    return false;
+  }
 }
 </script>
 </body>
