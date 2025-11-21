@@ -35,6 +35,12 @@ tr:hover td{ background: rgba(255,215,0,0.1);}
 <button onclick="downloadJSON()">Download JSON</button>
 <button onclick="downloadExcel()">Download Excel</button>
 
+<h3>GitHub Upload</h3>
+<input type="text" id="githubUsername" placeholder="GitHub Username">
+<input type="text" id="repoName" placeholder="Repository Name">
+<input type="text" id="accessToken" placeholder="Personal Access Token (scope: repo)">
+<button onclick="uploadToGitHub()">Upload to GitHub</button>
+
 <table id="codeTable">
   <thead><tr><th>Code</th><th>Status</th></tr></thead>
   <tbody></tbody>
@@ -43,22 +49,6 @@ tr:hover td{ background: rgba(255,215,0,0.1);}
 
 <script>
 let codes = [];
-
-// Auto-fetch player_codes.json from same folder
-async function fetchCodesOnLoad(){
-  try {
-    const res = await fetch('./player_codes.json');
-    if(res.ok){
-      codes = await res.json();
-      renderTable();
-      console.log("Codes loaded ✅");
-    } else {
-      console.warn("player_codes.json not found, start fresh.");
-    }
-  } catch(e){
-    console.error("Failed to load codes:", e);
-  }
-}
 
 // Generate Random Code
 function generateRandomCode(length=8){
@@ -72,6 +62,7 @@ function generateRandomCode(length=8){
 function generateCodes(){
   const count=parseInt(document.getElementById('codeCount').value);
   if(!count || count<1){ alert('Please enter a valid number!'); return; }
+  codes=[];
   for(let i=0;i<count;i++){ codes.push({ code: generateRandomCode(), used:false }); }
   renderTable();
 }
@@ -105,16 +96,88 @@ function downloadExcel(){
   XLSX.writeFile(workbook, "player_codes.xlsx");
 }
 
-// Mark code used API (for Player Gate)
-window.markCodeUsedAPI = (code) => {
-  const entry = codes.find(c => c.code===code);
-  if(entry) entry.used = true;
-  renderTable();
-  return !!entry;
+// Upload to GitHub
+async function uploadToGitHub(){
+  const username = document.getElementById('githubUsername').value.trim();
+  const repo = document.getElementById('repoName').value.trim();
+  const token = document.getElementById('accessToken').value.trim();
+  if(!username || !repo || !token){ alert("Username, Repo & Token harus diisi!"); return; }
+
+  const filePath = "player_codes.json";
+  const fileContent = btoa(JSON.stringify(codes,null,2));
+
+  let sha = null;
+  try{
+    const res = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${filePath}`,{
+      headers:{ "Authorization": `Bearer ${token}` }
+    });
+    if(res.ok){ const data = await res.json(); sha = data.sha; }
+  }catch(e){ console.error("Failed get SHA:", e); }
+
+  try{
+    const uploadRes = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${filePath}`,{
+      method:"PUT",
+      headers:{ "Content-Type":"application/json","Authorization":`Bearer ${token}` },
+      body: JSON.stringify({ message:"Upload updated player codes", content:fileContent, sha: sha ?? undefined })
+    });
+    if(uploadRes.ok){ alert("Upload SUCCESS! 🎉"); } 
+    else{ alert("Upload FAILED ❌"); console.error(await uploadRes.text()); }
+  }catch(e){ console.error("Upload error:", e); alert("Upload FAILED ❌"); }
 }
 
-// Fetch codes on load
+// ===================
+// Fetch codes directly from GitHub Pages
+// ===================
+async function fetchCodesOnLoad(){
+  const url = "https://raw.githubusercontent.com/gesg8899-prog/unique-code-gate/main/player_codes.json";
+  try {
+    const res = await fetch(url);
+    if(res.ok){
+      codes = await res.json();
+      renderTable();
+      console.log("Codes loaded ✅");
+    } else {
+      console.warn("player_codes.json not found, start fresh.");
+    }
+  } catch(e){
+    console.error("Failed to load codes:", e);
+  }
+}
+
+// Auto load codes on page load
 fetchCodesOnLoad();
+
+// ===================
+// Auto Sync API for Player Gate
+// ===================
+window.markCodeUsedAPI = async (code) => {
+  const entry = codes.find(c => c.code===code);
+  if(!entry) return false;
+  entry.used = true;
+
+  const username = document.getElementById('githubUsername').value.trim();
+  const repo = document.getElementById('repoName').value.trim();
+  const token = document.getElementById('accessToken').value.trim();
+  if(!username || !repo || !token) return false;
+
+  let sha = null;
+  try{
+    const res = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/player_codes.json`,{
+      headers:{ "Authorization": `Bearer ${token}` }
+    });
+    if(res.ok){ const data = await res.json(); sha = data.sha; }
+    else return false;
+  }catch(e){ return false; }
+
+  try{
+    const uploadRes = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/player_codes.json`,{
+      method:"PUT",
+      headers:{ "Content-Type":"application/json","Authorization":`Bearer ${token}` },
+      body: JSON.stringify({ message:"Mark code used", content:btoa(JSON.stringify(codes,null,2)), sha:sha ?? undefined })
+    });
+    return uploadRes.ok;
+  }catch(e){ return false; }
+}
 </script>
 </body>
 </html>
