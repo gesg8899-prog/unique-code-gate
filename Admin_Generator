@@ -36,13 +36,14 @@ tr:hover td{ background: rgba(255,215,0,0.1);}
 <button onclick="downloadExcel()">Download Excel</button>
 
 <h3>GitHub Upload</h3>
-<input type="text" id="githubUsername" placeholder="GitHub Username">
-<input type="text" id="repoName" placeholder="Repository Name">
+<input type="text" id="githubUsername" placeholder="GitHub Username" value="gesg8899-prog">
+<input type="text" id="repoName" placeholder="Repository Name" value="admin-generator">
 <input type="text" id="accessToken" placeholder="Personal Access Token (scope: repo)">
 <button onclick="uploadToGitHub()">Upload to GitHub</button>
 
 <h3>Fetch Codes from GitHub</h3>
-<input type="text" id="rawJsonUrl" placeholder="Raw GitHub URL to player_codes.json">
+<input type="text" id="rawJsonUrl" placeholder="Raw GitHub URL to player_codes.json" 
+       value="https://gesg8899-prog.github.io/admin-generator/player_codes.json">
 <button onclick="fetchCodes()">Fetch Codes</button>
 
 <table id="codeTable">
@@ -130,7 +131,7 @@ async function uploadToGitHub(){
   }catch(e){ console.error("Upload error:", e); alert("Upload FAILED ❌"); }
 }
 
-// Fetch codes from raw GitHub URL
+// Fetch codes from GitHub Pages URL
 async function fetchCodes(){
   const url = document.getElementById('rawJsonUrl').value.trim();
   if(!url){ alert("Masukkan Raw GitHub URL!"); return; }
