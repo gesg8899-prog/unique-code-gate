@@ -41,6 +41,10 @@ tr:hover td{ background: rgba(255,215,0,0.1);}
 <input type="text" id="accessToken" placeholder="Personal Access Token (scope: repo)">
 <button onclick="uploadToGitHub()">Upload to GitHub</button>
 
+<h3>Fetch Codes from GitHub</h3>
+<input type="text" id="rawJsonUrl" placeholder="Raw GitHub URL to player_codes.json">
+<button onclick="fetchCodes()">Fetch Codes</button>
+
 <table id="codeTable">
   <thead><tr><th>Code</th><th>Status</th></tr></thead>
   <tbody></tbody>
@@ -124,7 +128,23 @@ async function uploadToGitHub(){
     if(uploadRes.ok){ alert("Upload SUCCESS! 🎉"); } 
     else{ alert("Upload FAILED ❌ Check console for details"); console.error(await uploadRes.text()); }
   }catch(e){ console.error("Upload error:", e); alert("Upload FAILED ❌"); }
+}
 
+// Fetch codes from raw GitHub URL
+async function fetchCodes(){
+  const url = document.getElementById('rawJsonUrl').value.trim();
+  if(!url){ alert("Masukkan Raw GitHub URL!"); return; }
+  try{
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("Failed to fetch");
+    const data = await res.json();
+    codes = data;
+    renderTable();
+    alert("Codes fetched successfully ✅");
+  }catch(e){
+    console.error(e);
+    alert("Failed to fetch codes ❌");
+  }
 }
 
 // ===================
@@ -140,7 +160,6 @@ window.markCodeUsedAPI = async (code) => {
   const token = document.getElementById('accessToken').value.trim();
   if(!username || !repo || !token) return false;
 
-  // Get SHA
   let sha = null;
   try{
     const res = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/player_codes.json`,{
@@ -162,4 +181,3 @@ window.markCodeUsedAPI = async (code) => {
 </script>
 </body>
 </html>
-	
