@@ -3,60 +3,156 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Player Gate – Read-Only with Local Cache</title>
+<title>Player Gate – One Time Play Only</title>
 <style>
-body { font-family: Arial, sans-serif; background: #000; color: #ffd700; text-align: center; padding: 60px 30px; }
-.gate { max-width: 450px; margin: auto; padding: 30px; border-radius: 20px; background: linear-gradient(145deg, #1a1a1a, #000); border: 2px solid #ffd700; box-shadow: 0 0 25px #ffcc00; }
-input { width: 80%; padding: 12px; margin-bottom: 15px; border-radius: 10px; border: 1px solid #ffd700; background: #0d0d0d; color: #ffd700; font-size: 16px; }
-button { padding: 12px 20px; margin: 5px; border-radius: 10px; border: none; background: #ffd700; color: #000; font-weight: bold; cursor: pointer; }
+body {
+  font-family: Arial, sans-serif;
+  background: #000;
+  color: #ffd700;
+  text-align: center;
+  padding: 60px 30px;
+}
+.gate {
+  max-width: 450px;
+  margin: auto;
+  padding: 30px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #1a1a1a, #000);
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 25px #ffcc00;
+}
+input {
+  width: 80%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  border: 1px solid #ffd700;
+  background: #0d0d0d;
+  color: #ffd700;
+  font-size: 16px;
+}
+button {
+  padding: 12px 20px;
+  margin: 5px;
+  border-radius: 10px;
+  border: none;
+  background: #ffd700;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:disabled {
+  background: #444;
+  color: #999;
+  cursor: not-allowed;
+}
 .error { color: #ff4040; margin-top: 10px; }
 .success { color: #66ff66; margin-top: 10px; }
 </style>
 </head>
 <body>
+
 <div class="gate">
-  <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 10px;">Enter Access Code</h1>
+  <h1 style="font-size: 26px; font-weight: 700; margin-bottom: 10px;">
+    Enter Access Code
+  </h1>
   <input type="text" id="codeInput" placeholder="Enter your code">
-  <button onclick="validateCode()">Enter</button>
+  <br>
+  <button id="enterBtn" onclick="validateCode()">Enter</button>
   <p id="msg"></p>
 </div>
 
 <script>
-// CONFIG
+// ================== CONFIG ==================
 const rawURL = "./player_codes.json"; // path relatif GitHub Pages
-const redirectURL = " https://gesg8899-prog.github.io/scratchGE/";
+const redirectURL = "https://gesg8899-prog.github.io/scratchGE/";
 
-// LOCAL CACHE
-function getUsedCodes() { const stored = localStorage.getItem('usedCodes') || "[]"; return JSON.parse(stored); }
-function addUsedCode(code) { const usedCodes = getUsedCodes(); if(!usedCodes.includes(code)) { usedCodes.push(code); localStorage.setItem('usedCodes', JSON.stringify(usedCodes)); } }
+// KEY TERKUNCI (1x main saja)
+const PLAY_KEY = "alreadyPlayedOnce";
 
-// FETCH & VALIDATE
+// ================== CEK SUDAH PERNAH MAIN ==================
+if (localStorage.getItem(PLAY_KEY) === "true") {
+  lockPage();
+}
+
+// ================== LOCAL CACHE ==================
+function getUsedCodes() {
+  const stored = localStorage.getItem('usedCodes') || "[]";
+  return JSON.parse(stored);
+}
+
+function addUsedCode(code) {
+  const usedCodes = getUsedCodes();
+  if (!usedCodes.includes(code)) {
+    usedCodes.push(code);
+    localStorage.setItem('usedCodes', JSON.stringify(usedCodes));
+  }
+}
+
+// KUNCI TOTAL HALAMAN
+function lockPage() {
+  document.getElementById("codeInput").disabled = true;
+  const btn = document.getElementById("enterBtn");
+  btn.disabled = true;
+  const msg = document.getElementById("msg");
+  msg.textContent = "This device has already played the game. Access permanently locked.";
+  msg.className = "error";
+}
+
+// ================== FETCH & VALIDATE ==================
 async function loadCodes() {
   const res = await fetch(rawURL + "?t=" + Date.now());
-  if(!res.ok) throw new Error("Failed to load JSON");
+  if (!res.ok) throw new Error("Failed to load JSON");
   return await res.json();
 }
 
 async function validateCode() {
   const msg = document.getElementById("msg");
   msg.textContent = "";
+
+  // 🔴 BLOCK kalau sudah pernah main
+  if (localStorage.getItem(PLAY_KEY) === "true") {
+    lockPage();
+    return;
+  }
+
   const code = document.getElementById("codeInput").value.trim().toUpperCase();
-  if(!code) { msg.textContent = "Code cannot be empty"; msg.className = "error"; return; }
+
+  if (!code) {
+    msg.textContent = "Code cannot be empty";
+    msg.className = "error";
+    return;
+  }
 
   try {
     const codes = await loadCodes();
     const entry = codes.find(c => c.code === code);
     const usedCodes = getUsedCodes();
 
-    if(!entry) { msg.textContent = "Code not found"; msg.className = "error"; return; }
-    if(entry.used || usedCodes.includes(code)) { msg.textContent = "Code already used"; msg.className = "error"; return; }
+    if (!entry) {
+      msg.textContent = "Code not found";
+      msg.className = "error";
+      return;
+    }
 
+    if (entry.used || usedCodes.includes(code)) {
+      msg.textContent = "Code already used";
+      msg.className = "error";
+      return;
+    }
+
+    // ✅ Simpan code & lock 1x play
     addUsedCode(code);
+    localStorage.setItem(PLAY_KEY, "true");
+
     msg.textContent = "Access Granted! Redirecting...";
     msg.className = "success";
-    setTimeout(()=>{ window.location.href = redirectURL; }, 800);
 
-  } catch(e) {
+    setTimeout(() => {
+      window.location.href = redirectURL;
+    }, 800);
+
+  } catch (e) {
     msg.textContent = "Connection error";
     msg.className = "error";
   }
